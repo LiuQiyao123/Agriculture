@@ -1,0 +1,26 @@
+// src/styles/theme.scss
+
+// 1. Core Color Palette
+$bg-color: #0a1929; // Main background color
+$panel-bg-color: rgba(21, 38, 62, 0.85); // Panel background
+$border-color: rgba(0, 170, 255, 0.3); // Border color for panels
+$primary-accent-color: #00aaff; // Main accent/highlight color (tech blue)
+$secondary-accent-color: #00ff7f; // Secondary accent (tech green)
+$text-color: #c0c4cc; // Main text color
+$title-color: #ffffff; // Title text color
+
+// 2. ECharts Dark Theme Colors
+$chart-bg-color: transparent; // Chart background
+$chart-axis-line-color: rgba(255, 255, 255, 0.3);
+$chart-axis-label-color: $text-color;
+$chart-split-line-color: rgba(255, 255, 255, 0.1);
+
+// 3. Layout Variables
+$left-menu-bg: #0a1929; // Matches the main background for a seamless look
+$left-menu-text-color: $text-color;
+$left-menu-active-bg: #001e3c;
+$left-menu-active-text-color: $primary-accent-color;
+
+// 4. Typography
+$base-font-size: 14px;
+$title-font-size: 16px; 
