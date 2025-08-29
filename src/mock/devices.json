@@ -1,0 +1,26 @@
+[
+  {
+    "id": "SOIL-001",
+    "coordinates": [118.6, 36.7],
+    "type": "soil",
+    "status": "online"
+  },
+  {
+    "id": "WEATHER-001",
+    "coordinates": [118.7, 36.6],
+    "type": "weather",
+    "status": "online"
+  },
+  {
+    "id": "DRONE-001",
+    "coordinates": [118.5, 36.5],
+    "type": "drone",
+    "status": "online"
+  },
+    {
+    "id": "MOTH-001",
+    "coordinates": [118.8, 36.55],
+    "type": "moth",
+    "status": "alarm"
+  }
+]

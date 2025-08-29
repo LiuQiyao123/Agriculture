@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="272px" height="40px" viewBox="0 0 272 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>右上</title>
+    <defs>
+        <filter x="-24.0%" y="-25.9%" width="152.0%" height="148.1%" filterUnits="objectBoundingBox" id="filter-1">
+            <feGaussianBlur stdDeviation="2" in="SourceGraphic"></feGaussianBlur>
+        </filter>
+        <linearGradient x1="92.866941%" y1="50%" x2="7.13305898%" y2="0%" id="linearGradient-2">
+            <stop stop-color="#23DEFD" stop-opacity="0.00469842657" offset="0%"></stop>
+            <stop stop-color="#20DBFD" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="50%" x2="0%" y2="50%" id="linearGradient-3">
+            <stop stop-color="#FFFFFF" stop-opacity="0" offset="0%"></stop>
+            <stop stop-color="#00AEFF" offset="50.1961555%"></stop>
+            <stop stop-color="#FFFFFF" stop-opacity="0" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="画框" transform="translate(-334, -1512)">
+            <g id="右上" transform="translate(334, 1513)">
+                <polyline id="路径-11" stroke="#3EBBFF" stroke-width="2" opacity="0.385723296" filter="url(#filter-1)" points="240 6 265 6 265 33"></polyline>
+                <polyline id="路径-11" stroke="url(#linearGradient-2)" stroke-width="2" points="240 0 265 0 265 27"></polyline>
+                <line x1="-1.42750395e-14" y1="0.5" x2="211" y2="0.5" id="路径-13" stroke="url(#linearGradient-3)"></line>
+            </g>
+        </g>
+    </g>
+</svg>

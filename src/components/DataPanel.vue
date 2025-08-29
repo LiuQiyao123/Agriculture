@@ -1,6 +1,9 @@
 <template>
   <div class="data-panel">
-    <div class="panel-title">{{ title }}</div>
+    <div v-if="title" class="panel-header">
+      <span class="title-text">{{ title }}</span>
+      <button v-if="showClose" class="close-btn" @click="emit('close')">&times;</button>
+    </div>
     <div class="panel-content">
       <slot></slot>
     </div>
@@ -12,55 +15,90 @@ defineProps({
   title: {
     type: String,
     default: ''
+  },
+  showClose: {
+    type: Boolean,
+    default: false
   }
 });
+
+const emit = defineEmits(['close']);
 </script>
 
 <style lang="scss" scoped>
 @use '@/styles/theme.scss' as theme;
 
 .data-panel {
-  background-color: theme.$panel-bg-color;
-  border: 1px solid theme.$border-color;
-  border-radius: 4px;
-  height: 100%;
+  position: relative;
+  /* width: 400px; Constrain the panel width */
+  flex-shrink: 0; /* Prevent the panel from shrinking in a flex container */
+  min-height: 306px; /* Apply height constraint to the direct flex item */
+  
+  /* Make the panel a flex container to manage its children */
   display: flex;
   flex-direction: column;
-  position: relative;
 
-  &::before, &::after {
+  /* New styles for glowing effect */
+  border-radius: 8px;
+  border: 1px solid rgba(0, 170, 255, 0.5);
+  box-shadow: 0 0 12px rgba(0, 170, 255, 0.3);
+  overflow: hidden;
+  background-color: theme.$panel-bg-color; /* Unified background */
+}
+
+.panel-header {
+  position: relative;
+  height: 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 12px;
+
+  /* Decorative background */
+  &::before {
     content: '';
     position: absolute;
-    width: 10px;
-    height: 10px;
-    border-style: solid;
-    border-color: theme.$primary-accent-color;
-  }
-
-  &::before {
-    top: -2px;
-    left: -2px;
-    border-width: 2px 0 0 2px;
-  }
-
-  &::after {
-    bottom: -2px;
-    right: -2px;
-    border-width: 0 2px 2px 0;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 320px; 
+    height: 100%;
+    background-image: url('@/assets/images/模块基础.svg');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: left center;
   }
 }
 
-.panel-title {
+.title-text {
   color: theme.$title-color;
   font-size: theme.$title-font-size;
   font-weight: bold;
-  padding: 10px;
-  border-bottom: 1px solid theme.$border-color;
+  padding-left: 30px;
+  position: relative; /* Ensure text is above the pseudo-element */
+  z-index: 1;
+}
+
+.close-btn {
+  position: relative;
+  z-index: 1;
+  margin-right: 15px;
+  background: transparent;
+  border: none;
+  color: #a0a6b8;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 5px;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #fff;
+  }
 }
 
 .panel-content {
-  padding: 10px;
+  padding: 20px;
   flex-grow: 1;
-  overflow: hidden;
 }
 </style> 

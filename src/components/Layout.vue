@@ -2,7 +2,7 @@
   <el-container class="app-layout">
     <el-header class="app-header">
       <div class="header-logo-title">
-        <img src="/logo.png" alt="Logo" class="logo">
+        <img src="/logo-navigator.png" alt="Logo" class="logo">
         <div class="header-title">深渡智慧农业平台</div>
       </div>
       <el-menu

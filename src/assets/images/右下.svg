@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="124px" height="58px" viewBox="0 0 124 58" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>右下</title>
+    <defs>
+        <filter x="-5.4%" y="-13.3%" width="111.7%" height="128.9%" filterUnits="objectBoundingBox" id="filter-1">
+            <feGaussianBlur stdDeviation="2" in="SourceGraphic"></feGaussianBlur>
+        </filter>
+        <linearGradient x1="19.4489333%" y1="55.5530015%" x2="93.3604593%" y2="32.5311552%" id="linearGradient-2">
+            <stop stop-color="#23DEFD" stop-opacity="0.00469842657" offset="0%"></stop>
+            <stop stop-color="#20DBFD" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="画框" transform="translate(-482, -1762)">
+            <g id="右下" transform="translate(488, 1763)">
+                <polyline id="路径-12" stroke="#3EBBFF" stroke-width="2" opacity="0.2" filter="url(#filter-1)" points="111 5 111 31.6339037 98.5675145 49.6993297 0 50"></polyline>
+                <polyline id="路径-12" stroke="url(#linearGradient-2)" stroke-width="2" opacity="0.503012521" points="111 2.14379405e-14 111 26.6339037 98.5675145 44.6993297 0 45"></polyline>
+            </g>
+        </g>
+    </g>
+</svg>

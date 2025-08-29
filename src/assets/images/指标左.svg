@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="42px" height="80px" viewBox="0 0 42 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>编组 14</title>
+    <defs>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#3FA1FB" stop-opacity="0" offset="0%"></stop>
+            <stop stop-color="#3FA1FB" offset="18.5993834%"></stop>
+            <stop stop-color="#3FA1FB" offset="81.5789147%"></stop>
+            <stop stop-color="#3FA1FB" stop-opacity="0" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-2">
+            <stop stop-color="#3FA1FB" stop-opacity="0" offset="0%"></stop>
+            <stop stop-color="#3FA1FB" offset="18.5993834%"></stop>
+            <stop stop-color="#3FA1FB" offset="81.5789147%"></stop>
+            <stop stop-color="#3FA1FB" stop-opacity="0" offset="100%"></stop>
+        </linearGradient>
+        <polygon id="path-3" points="20 34 23.5622097 34 28 39.9027419 23.5622097 46 20 46"></polygon>
+        <filter x="-243.8%" y="-162.5%" width="596.6%" height="425.0%" filterUnits="objectBoundingBox" id="filter-4">
+            <feMorphology radius="1.5" operator="dilate" in="SourceAlpha" result="shadowSpreadOuter1"></feMorphology>
+            <feOffset dx="0" dy="0" in="shadowSpreadOuter1" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 1   0 0 0 0 0.603921569   0 0 0 0 0.215686275  0 0 0 0.4 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="画框" transform="translate(-201, -1273)">
+            <g id="编组-14" transform="translate(201, 1273)">
+                <polygon id="路径-16" fill="url(#linearGradient-1)" points="18 10 7 20.4995411 7 61.2632574 18 71 18 66.4750318 10.0348735 58.209394 10.0348735 23.1163808 18 15.1089081"></polygon>
+                <polygon id="路径-17" fill="url(#linearGradient-2)" opacity="0.4" points="-3.49199836e-14 13.6832597 -3.49199836e-14 67.0774447 15 80 15 76.7177699 2.09645142 65.8329164 2.09645142 15.0647239 15 3.09318782 15 5.36376499e-14"></polygon>
+                <g id="路径-2">
+                    <use fill="black" fill-opacity="1" filter="url(#filter-4)" xlink:href="#path-3"></use>
+                    <use fill="#FFBE4E" fill-rule="evenodd" xlink:href="#path-3"></use>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

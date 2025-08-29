@@ -6,11 +6,11 @@ export const topMetrics = [
 ]
 
 export const alertsList = [
-  { id: 1, content: '[橙色预警] 城关镇发生稻飞虱病害，影响面积约200亩。', location: { lng: 116.35, lat: 39.95, zoom: 14 } },
-  { id: 2, content: '[红色预警] 高新区玉米地块出现严重干旱，相对湿度低于20%。', location: { lng: 116.45, lat: 40.05, zoom: 15 } },
-  { id: 3, content: '[橙色预警] 开发区发现草地贪夜蛾，请注意防范。', location: { lng: 116.30, lat: 39.85, zoom: 14 } },
-  { id: 4, content: '[普通通知] 新一批农业补贴已下发，请各农户查收。', location: null }, // No location for this one
-  { id: 5, content: '[橙色预警] 城关镇发生稻飞虱病害，影响面积约200亩。', location: { lng: 116.35, lat: 39.95, zoom: 14 } },
+  { id: 1, content: '[病害预警] 城关镇发生稻飞虱病害，影响面积约200亩。', location: { lng: 116.35, lat: 39.95, zoom: 14 } },
+  { id: 2, content: '[干旱预警] 高新区玉米地块土壤湿度连续3天低于30%，请及时灌溉。', location: { lng: 116.45, lat: 40.05, zoom: 15 } },
+  { id: 3, content: '[设备告警] 开发区气象站离线超过2小时，请派人检查。', location: { lng: 116.30, lat: 39.85, zoom: 14 } },
+  { id: 4, content: '[虫害预警] 白马乡发现草地贪夜蛾成虫，有扩散风险，请注意防范。', location: { lng: 116.50, lat: 39.90, zoom: 14 } },
+  { id: 5, content: '[涝灾预警] 未来24小时内预计有强降雨，低洼地块请注意排涝。', location: null },
 ]
 
 // 数据
@@ -68,17 +68,44 @@ export const plotGeoJson = {
         type: 'Polygon',
         coordinates: [
           [
-            [116.3, 39.9], [116.4, 39.9], [116.4, 40.0], [116.3, 40.0], [116.3, 39.9]
+            [118.3, 36.4], [118.5, 36.4], [118.5, 36.6], [118.3, 36.6], [118.3, 36.4]
           ]
         ]
       },
       properties: {
-        id: 'P001', name: '城关镇-01号高标准水稻田', crop: '水稻', area: 120.5,
-        manager: '张三', phone: '13800138000',
-        realtime_moisture: 65, realtime_ndvi: 0.85
+        id: 'P001', 
+        name: '城关镇-01号高标准水稻田', 
+        crop: '水稻', 
+        areaMu: 120.5,
+        soilScore: 85,
+        soilMoisture: 65, 
+        ndvi: 0.85,
+        owner: '张三', 
+        phone: '13800138000'
       }
     },
-    // We can add more features here later
+    {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [118.6, 36.7], [118.8, 36.7], [118.8, 36.9], [118.6, 36.9], [118.6, 36.7]
+          ]
+        ]
+      },
+      properties: {
+        id: 'P002', 
+        name: '高新区-玉米种植基地', 
+        crop: '玉米', 
+        areaMu: 89.3,
+        soilScore: 78,
+        soilMoisture: 45, 
+        ndvi: 0.72,
+        owner: '李四', 
+        phone: '13900139000'
+      }
+    }
   ]
 };
 
@@ -254,4 +281,171 @@ export const getSoilMoistureOptions = (data, themeColors) => ({
       data: [{ value: data.value }]
     }
   ]
-}); 
+});
+
+// --- Left Panel: Crop Growth ---
+export const cropGrowthData = {
+  categories: ['优', '良', '中', '差'],
+  values: [28000, 45000, 15000, 3500], // unit: mu (亩)
+};
+
+export const getCropGrowthOptions = (data, themeColors) => ({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow'
+    },
+    formatter: '{b}: {c} 亩'
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    top: '15%', // Reduce top margin
+    containLabel: true
+  },
+  xAxis: {
+    type: 'category',
+    data: data.categories,
+    axisLine: { lineStyle: { color: themeColors.axisLineColor } },
+    axisLabel: { color: themeColors.textColor, fontSize: 13 },
+    axisTick: { show: false }
+  },
+  yAxis: {
+    type: 'value',
+    name: '耕地面积(亩)',
+    nameTextStyle: {
+      color: themeColors.textColor,
+      padding: [0, 0, 0, 50]
+    },
+    axisLine: { show: true, lineStyle: { color: themeColors.axisLineColor } },
+    splitLine: { lineStyle: { color: themeColors.splitLineColor } },
+    axisLabel: { color: themeColors.textColor, fontSize: 13 }
+  },
+  series: [
+    {
+      data: data.values.map((value, index) => ({
+        value: value,
+        itemStyle: {
+          color: ['#52c41a', '#91cc75', '#facc14', '#f5222d'][index]
+        }
+      })),
+      type: 'bar',
+      barWidth: '40%',
+    }
+  ]
+});
+
+// --- Left Panel: Risk Radar ---
+export const riskRadarData = {
+  indicator: [
+    { name: '旱灾', max: 100 },
+    { name: '涝灾', max: 100 },
+    { name: '病害', max: 100 },
+    { name: '虫害', max: 100 },
+    { name: '风灾', max: 100 },
+  ],
+  values: [65, 40, 85, 70, 30], // Risk probability (%)
+};
+
+export const getRiskRadarOptions = (data, themeColors) => ({
+  radar: {
+    indicator: data.indicator,
+    center: ['50%', '55%'],
+    radius: '80%',
+    name: {
+      textStyle: { color: themeColors.textColor, fontSize: 14 }
+    },
+    splitArea: {
+      areaStyle: {
+        color: ['rgba(0, 170, 255, 0.1)', 'rgba(0, 170, 255, 0.05)'],
+      }
+    },
+    axisLine: { lineStyle: { color: 'rgba(0, 170, 255, 0.2)' } },
+    splitLine: { lineStyle: { color: 'rgba(0, 170, 255, 0.2)' } }
+  },
+  series: [{
+    name: '未来一周风险概率',
+    type: 'radar',
+    data: [{
+      value: data.values,
+      name: '风险概率 (%)',
+      areaStyle: { color: 'rgba(255, 77, 79, 0.5)' },
+      lineStyle: { color: '#ff4d4f' }
+    }]
+  }]
+});
+
+
+// --- Left Panel: Supply & Demand (Reworked) ---
+export const supplyDemandData = {
+  // Generate data for the last 30 days and next 30 days
+  dates: Array.from({ length: 60 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - 29 + i);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }),
+  // Single line of data representing combined supply/demand metric (e.g., price index)
+  values: [
+    // Past 30 days (actual data)
+    ...Array.from({ length: 30 }, () => 100 + Math.random() * 20 - 10),
+    // Next 30 days (predicted data)
+    ...Array.from({ length: 30 }, () => 105 + Math.random() * 25 - 12.5),
+  ],
+  todayIndex: 29, // Index of "today"
+};
+
+export const getSupplyDemandOptions = (data, themeColors) => {
+  const historicData = data.values.slice(0, data.todayIndex + 1);
+  // For the forecast, the first point must be the same as the last historic point to connect the line
+  const forecastData = Array(data.todayIndex).fill(null).concat(data.values.slice(data.todayIndex));
+
+  return {
+    tooltip: {
+      trigger: 'axis'
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '18%', // Reduce top margin
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: data.dates,
+      axisLine: { lineStyle: { color: themeColors.axisLineColor } },
+      axisLabel: { color: themeColors.textColor, fontSize: 13 },
+    },
+    yAxis: {
+      type: 'value',
+      name: '供需指数',
+      axisLabel: { formatter: '{value}', fontSize: 13 },
+      axisLine: { show: true, lineStyle: { color: themeColors.axisLineColor } },
+      splitLine: { lineStyle: { color: themeColors.splitLineColor } },
+    },
+    series: [
+      {
+        name: '历史数据',
+        type: 'line',
+        data: historicData,
+        smooth: true,
+        showSymbol: false,
+        itemStyle: { color: '#00ff7f' },
+        lineStyle: { type: 'solid' }
+      },
+      {
+        name: '预测数据',
+        type: 'line',
+        data: forecastData,
+        smooth: true,
+        showSymbol: false,
+        itemStyle: { color: '#00ff7f' },
+        lineStyle: { type: 'dashed' },
+      },
+    ],
+
+
+  };
+}; 
