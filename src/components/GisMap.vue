@@ -28,6 +28,58 @@
         </button>
       </template>
     </div>
+
+    <!-- 设备图例控制 -->
+    <div v-if="activeLayers.includes('sensor-devices')" class="device-legend">
+      <div class="legend-title">设备类型</div>
+      <div class="legend-items">
+        <div 
+          v-for="deviceType in deviceTypes" 
+          :key="deviceType.key"
+          class="legend-item"
+          :class="{ active: deviceTypeVisibility[deviceType.key] }"
+          @click="toggleDeviceType(deviceType.key)"
+        >
+          <div class="legend-icon" :style="{ backgroundColor: deviceType.color }"></div>
+          <span class="legend-text">{{ deviceType.name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 时间轴控制 -->
+    <div v-if="shouldShowTimeSlider" class="time-slider">
+      <div class="time-slider-header">
+        <span class="time-label">时间轴</span>
+        <span class="current-date">{{ selectedDate.toLocaleDateString('zh-CN') }}</span>
+      </div>
+      <div class="time-slider-content">
+        <div class="slider-track">
+          <div class="slider-fill" :style="{ width: `${getSliderPosition()}%` }"></div>
+          <input 
+            type="range" 
+            min="0" 
+            max="14" 
+            :value="getSliderValue()"
+            @input="handleSliderChange"
+            class="slider-input"
+          />
+          <div class="time-markers">
+            <div 
+              v-for="(timeItem, index) in timeAxisData" 
+              :key="index"
+              class="time-marker"
+              :class="{ 
+                history: timeItem.type === 'history',
+                current: timeItem.type === 'current',
+                prediction: timeItem.type === 'prediction'
+              }"
+            >
+              <span class="time-label">{{ timeItem.label }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -36,6 +88,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import devices from '../mock/devices.json';
+import irrigationSystem from '../mock/irrigation-system.json';
 // import { generateChlorophyllGrid, chlorophyllColorScale } from '../mock/gis.js'; // Heatmap feature disabled for now
 
 const props = defineProps({
@@ -50,16 +103,22 @@ let map = null;
 
 // --- Centralized Layer and View Configuration ---
 const allLayersConfig = {
-  'plots': { id: 'plots', name: '地块边界', type: 'geojson', defaultVisibility: true },
-  'sensor-devices': { id: 'sensor-devices', name: '在线设备', type: 'marker', defaultVisibility: true },
-  'ndvi-tiles': { id: 'ndvi-tiles', name: 'NDVI 热力图', type: 'raster', defaultVisibility: false },
+  'plots': { id: 'plots', name: '地块边界', type: 'geojson', defaultVisibility: true, exclusive: false },
+  'sensor-devices': { id: 'sensor-devices', name: '在线设备', type: 'marker', defaultVisibility: true, exclusive: true },
+  'ndvi-tiles': { id: 'ndvi-tiles', name: '作物长势(NDVI)', type: 'raster', defaultVisibility: false, exclusive: true },
+  'soil-moisture': { id: 'soil-moisture', name: '土壤墒情评估', type: 'raster', defaultVisibility: false, exclusive: true },
+  'pest-disease': { id: 'pest-disease', name: '病虫害监测', type: 'raster', defaultVisibility: false, exclusive: true },
+  'weather-disaster': { id: 'weather-disaster', name: '气象灾害预警', type: 'raster', defaultVisibility: false, exclusive: true },
+  'irrigation-system': { id: 'irrigation-system', name: '灌溉系统', type: 'geojson', defaultVisibility: false, exclusive: true },
+  'crop-yield': { id: 'crop-yield', name: '产量预测', type: 'raster', defaultVisibility: false, exclusive: true },
+  'soil-quality': { id: 'soil-quality', name: '土壤肥力', type: 'raster', defaultVisibility: false, exclusive: true },
 };
 
 const views = {
   production: {
     id: 'production',
     name: '农业生产视图',
-    layers: ['plots', 'sensor-devices', 'ndvi-tiles'],
+    layers: ['plots', 'sensor-devices', 'ndvi-tiles', 'soil-moisture', 'pest-disease', 'weather-disaster', 'irrigation-system', 'crop-yield', 'soil-quality'],
   },
   governance: {
     id: 'governance',
@@ -71,6 +130,258 @@ const views = {
 const currentView = ref('production');
 const activeLayers = ref(['plots', 'sensor-devices']); // Default active layers
 const currentViewLayers = computed(() => views[currentView.value]);
+
+// 时间轴相关状态
+const timeSliderVisible = ref(false);
+const currentDate = ref(new Date());
+const selectedDate = ref(new Date());
+
+// 需要时间轴的图层
+const timeAxisLayers = ['ndvi-tiles', 'soil-moisture', 'pest-disease', 'weather-disaster', 'crop-yield', 'soil-quality'];
+
+// 计算时间轴是否应该显示
+const shouldShowTimeSlider = computed(() => {
+  return timeSliderVisible.value && activeLayers.value.some(layer => timeAxisLayers.includes(layer));
+});
+
+// 生成时间轴数据（T-7到T+7）
+const timeAxisData = computed(() => {
+  const dates = [];
+  const today = new Date();
+  
+  // 过去7天
+  for (let i = 7; i > 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    dates.push({
+      date: date,
+      label: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+      type: 'history'
+    });
+  }
+  
+  // 今天
+  dates.push({
+    date: today,
+    label: '今天',
+    type: 'current'
+  });
+  
+  // 未来7天
+  for (let i = 1; i <= 7; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() + i);
+    dates.push({
+      date: date,
+      label: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+      type: 'prediction'
+    });
+  }
+  
+  return dates;
+});
+
+// 图层颜色配置
+const layerColors = {
+  'ndvi-tiles': {
+    low: '#d73027',    // 红色 - 低NDVI
+    medium: '#f46d43', // 橙色 - 中等NDVI
+    high: '#fdae61',   // 黄色 - 高NDVI
+    veryHigh: '#fee08b', // 浅黄 - 很高NDVI
+    excellent: '#d9ef8b'  // 绿色 - 优秀NDVI
+  },
+  'soil-moisture': {
+    dry: '#8b0000',      // 深红 - 干燥
+    low: '#ff4500',      // 橙红 - 偏低
+    normal: '#ffa500',   // 橙色 - 正常
+    high: '#32cd32',     // 绿色 - 偏高
+    wet: '#006400'       // 深绿 - 湿润
+  },
+  'pest-disease': {
+    none: '#228b22',     // 绿色 - 无病虫害
+    low: '#ffd700',      // 金色 - 轻度
+    medium: '#ff8c00',   // 橙色 - 中度
+    high: '#ff4500',     // 橙红 - 重度
+    severe: '#8b0000'    // 深红 - 严重
+  },
+  'weather-disaster': {
+    none: '#228b22',     // 绿色 - 无灾害
+    low: '#ffd700',      // 金色 - 轻度
+    medium: '#ff8c00',   // 橙色 - 中度
+    high: '#ff4500',     // 橙红 - 重度
+    severe: '#8b0000'    // 深红 - 严重
+  },
+  'crop-yield': {
+    low: '#8b0000',      // 深红 - 低产
+    medium: '#ff8c00',   // 橙色 - 中产
+    high: '#32cd32',     // 绿色 - 高产
+    veryHigh: '#228b22'  // 深绿 - 高产
+  },
+  'soil-quality': {
+    poor: '#8b0000',     // 深红 - 贫瘠
+    fair: '#ff8c00',     // 橙色 - 一般
+    good: '#32cd32',     // 绿色 - 良好
+    excellent: '#228b22' // 深绿 - 优秀
+  }
+};
+
+// 设备图例配置
+const deviceTypes = [
+  { key: 'soil', name: '墒情传感器', visible: true, color: '#1DC788' },
+  { key: 'weather', name: '气象监测站', visible: true, color: '#20DBFD' },
+  { key: 'field', name: '田间监测站', visible: true, color: '#FFAA00' },
+  { key: 'moth', name: '虫情测报仪', visible: true, color: '#731DC7' },
+  { key: 'spore', name: '孢子测报仪', visible: true, color: '#FF6B6B' },
+  { key: 'drone', name: '巡飞无人机', visible: true, color: '#4ECDC4' }
+];
+
+const deviceTypeVisibility = ref({
+  soil: true,
+  weather: true,
+  field: true,
+  moth: true,
+  spore: true,
+  drone: true
+});
+
+// 切换设备类型显示
+const toggleDeviceType = (typeKey) => {
+  deviceTypeVisibility.value[typeKey] = !deviceTypeVisibility.value[typeKey];
+  // 重新渲染设备标记
+  if (activeLayers.value.includes('sensor-devices')) {
+    clearMarkers();
+    addMarkers();
+  }
+};
+
+// 时间轴处理函数
+const handleTimeChange = (date) => {
+  selectedDate.value = date;
+  // 这里可以根据选择的日期更新图层数据
+  updateLayerDataByDate(date);
+};
+
+const handleSliderChange = (event) => {
+  const value = parseInt(event.target.value);
+  const dateIndex = value;
+  if (timeAxisData.value[dateIndex]) {
+    selectedDate.value = timeAxisData.value[dateIndex].date;
+    updateLayerDataByDate(selectedDate.value);
+  }
+};
+
+const getSliderValue = () => {
+  // 直接返回当前选中日期在时间轴数据中的索引
+  const today = new Date();
+  const todayStr = today.toDateString();
+  
+  // 找到今天在时间轴数据中的索引
+  const todayIndex = timeAxisData.value.findIndex(item => item.date.toDateString() === todayStr);
+  
+  if (todayIndex === -1) return 7; // 默认返回中间位置
+  
+  // 计算当前选中日期相对于今天的偏移
+  const selectedIndex = timeAxisData.value.findIndex(item => item.date.toDateString() === selectedDate.value.toDateString());
+  
+  if (selectedIndex === -1) return todayIndex;
+  
+  return selectedIndex;
+};
+
+const getSliderPosition = () => {
+  return (getSliderValue() / 14) * 100;
+};
+
+const updateLayerDataByDate = (date) => {
+  // 根据选择的日期更新当前激活的图层数据
+  const activeTimeLayer = activeLayers.value.find(layer => timeAxisLayers.includes(layer) && layer !== 'irrigation-system');
+  if (activeTimeLayer && map) {
+    // 这里可以根据日期更新图层的数据源
+    console.log(`更新图层 ${activeTimeLayer} 的数据到日期: ${date.toLocaleDateString()}`);
+    
+    // 更新地块颜色
+    updatePlotColors(activeTimeLayer, date);
+  }
+};
+
+const updatePlotColors = (layerKey, date) => {
+  if (!map || !props.geojson) return;
+  
+  const colors = layerColors[layerKey];
+  if (!colors) return;
+  
+  // 模拟根据图层类型和日期生成地块颜色数据
+  const updatedData = {
+    ...props.geojson,
+    features: props.geojson.features.map(feature => {
+      const plotId = feature.properties.id;
+      let color;
+      
+      // 根据图层类型生成不同的颜色
+      switch (layerKey) {
+        case 'ndvi-tiles':
+          const ndviValue = Math.random() * 100;
+          if (ndviValue < 20) color = colors.low;
+          else if (ndviValue < 40) color = colors.medium;
+          else if (ndviValue < 60) color = colors.high;
+          else if (ndviValue < 80) color = colors.veryHigh;
+          else color = colors.excellent;
+          break;
+          
+        case 'soil-moisture':
+          const moistureValue = Math.random() * 100;
+          if (moistureValue < 20) color = colors.dry;
+          else if (moistureValue < 40) color = colors.low;
+          else if (moistureValue < 60) color = colors.normal;
+          else if (moistureValue < 80) color = colors.high;
+          else color = colors.wet;
+          break;
+          
+        case 'pest-disease':
+        case 'weather-disaster':
+          const riskValue = Math.random() * 100;
+          if (riskValue < 20) color = colors.none;
+          else if (riskValue < 40) color = colors.low;
+          else if (riskValue < 60) color = colors.medium;
+          else if (riskValue < 80) color = colors.high;
+          else color = colors.severe;
+          break;
+          
+        case 'crop-yield':
+          const yieldValue = Math.random() * 100;
+          if (yieldValue < 25) color = colors.low;
+          else if (yieldValue < 50) color = colors.medium;
+          else if (yieldValue < 75) color = colors.high;
+          else color = colors.veryHigh;
+          break;
+          
+        case 'soil-quality':
+          const qualityValue = Math.random() * 100;
+          if (qualityValue < 25) color = colors.poor;
+          else if (qualityValue < 50) color = colors.fair;
+          else if (qualityValue < 75) color = colors.good;
+          else color = colors.excellent;
+          break;
+          
+        default:
+          color = 'rgba(0, 170, 255, 0.1)';
+      }
+      
+      return {
+        ...feature,
+        properties: {
+          ...feature.properties,
+          layerColor: color
+        }
+      };
+    })
+  };
+  
+  // 更新地图数据
+  if (map.getSource('plots')) {
+    map.getSource('plots').setData(updatedData);
+  }
+};
 
 const getLayerName = (layerKey) => {
   return allLayersConfig[layerKey]?.name || layerKey;
@@ -118,11 +429,11 @@ const initializeMap = () => {
     container: mapContainer.value,
     style: style,
     center: [118.5, 36.5], // Center of Shandong Province
-    zoom: 6.5, // Zoom level to show the whole province
+    zoom: 7.2, // Zoom level to show the whole province
     pitch: 45,
     bearing: -17.6,
     antialias: true,
-    attributionControl: { compact: true },
+    attributionControl: false, // 完全禁用版权信息
     dragRotate: true,
     pitchWithRotate: true,
     keyboard: true,
@@ -191,6 +502,11 @@ const addMarkers = () => {
   if (!map || !dataSource) return;
   dataSource.forEach(markerInfo => {
     if (!Array.isArray(markerInfo.coordinates)) return;
+    
+    // 检查设备类型是否可见
+    const deviceType = (markerInfo.type || 'soil').toLowerCase();
+    if (!deviceTypeVisibility.value[deviceType]) return;
+    
     const wrap = document.createElement('div');
     wrap.className = 'marker-wrap';
 
@@ -208,6 +524,8 @@ const addMarkers = () => {
     if (type.includes('weather')) typeClass = 'type-weather';
     else if (type.includes('drone')) typeClass = 'type-drone';
     else if (type.includes('moth')) typeClass = 'type-moth';
+    else if (type.includes('spore')) typeClass = 'type-spore';
+    else if (type.includes('field')) typeClass = 'type-field';
 
     el.className = `custom-marker ${typeClass} ${statusClass}`;
     wrap.appendChild(el);
@@ -235,8 +553,8 @@ const addMarkers = () => {
       }, 5000 + Math.random() * 1000);
     }
 
-    // basic drone movement simulation
-    if (markerInfo.type === 'drone' || markerInfo.type === 'satellite') {
+    // 巡飞无人机动态位置更新
+    if (markerInfo.type === 'drone') {
       let t = 0;
       const move = () => {
         t += 0.0005;
@@ -268,12 +586,22 @@ const updateMapData = () => {
         type: 'fill',
         source: 'plots',
         paint: {
-          'fill-color': '#00aaff', // Set fill color for hover effect
+          'fill-color': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            '#00aaff', // 悬停时的颜色
+            [
+              'case',
+              ['has', 'layerColor'],
+              ['get', 'layerColor'],
+              'rgba(0, 170, 255, 0.1)' // 默认颜色
+            ]
+          ],
           'fill-opacity': [
             'case',
             ['boolean', ['feature-state', 'hover'], false],
-            0.3, // Opacity when hovered
-            0    // Fully transparent by default
+            0.3, // 悬停时的透明度
+            0.6  // 默认透明度 - 提高透明度让颜色更明显
           ]
         }
       });
@@ -344,6 +672,68 @@ const updateMapData = () => {
       }
     }
   }
+  
+  // 添加灌溉系统图层
+  if (!map.getSource('irrigation-system')) {
+    map.addSource('irrigation-system', { 
+      type: 'geojson', 
+      data: irrigationSystem
+    });
+    
+    map.addLayer({
+      id: 'irrigation-lines',
+      type: 'line',
+      source: 'irrigation-system',
+      paint: {
+        'line-color': [
+          'interpolate',
+          ['linear'],
+          ['get', 'capacity'],
+          15, '#87CEEB',  // 浅蓝色 - 小流量
+          25, '#4682B4',  // 钢蓝色 - 中等流量
+          30, '#1E90FF',  // 道奇蓝 - 大流量
+          50, '#0000CD'   // 深蓝色 - 最大流量
+        ],
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['get', 'capacity'],
+          15, 2,   // 细线 - 小流量
+          25, 3,   // 中等线 - 中等流量
+          30, 4,   // 粗线 - 大流量
+          50, 5    // 最粗线 - 最大流量
+        ],
+        'line-opacity': 0.9
+      },
+      layout: {
+        visibility: 'none'
+      }
+    });
+    
+    // 添加河流阴影效果
+    map.addLayer({
+      id: 'irrigation-lines-shadow',
+      type: 'line',
+      source: 'irrigation-system',
+      paint: {
+        'line-color': '#000000',
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['get', 'capacity'],
+          15, 3,   // 阴影宽度
+          25, 4,
+          30, 5,
+          50, 6
+        ],
+        'line-opacity': 0.3,
+        'line-translate': [2, 2]  // 阴影偏移
+      },
+      layout: {
+        visibility: 'none'
+      }
+    });
+  }
   // markers
   clearMarkers();
   addMarkers();
@@ -355,8 +745,13 @@ const setLayerVisibility = (layerKey, visible) => {
 
   switch (config.type) {
     case 'geojson':
-      if (map.getLayer('plots-fill')) map.setLayoutProperty('plots-fill', 'visibility', visible ? 'visible' : 'none');
-      if (map.getLayer('plots-outline')) map.setLayoutProperty('plots-outline', 'visibility', visible ? 'visible' : 'none');
+      if (layerKey === 'plots') {
+        if (map.getLayer('plots-fill')) map.setLayoutProperty('plots-fill', 'visibility', visible ? 'visible' : 'none');
+        if (map.getLayer('plots-outline')) map.setLayoutProperty('plots-outline', 'visibility', visible ? 'visible' : 'none');
+      } else if (layerKey === 'irrigation-system') {
+        if (map.getLayer('irrigation-lines')) map.setLayoutProperty('irrigation-lines', 'visibility', visible ? 'visible' : 'none');
+        if (map.getLayer('irrigation-lines-shadow')) map.setLayoutProperty('irrigation-lines-shadow', 'visibility', visible ? 'visible' : 'none');
+      }
       break;
     case 'marker':
       visible ? addMarkers() : clearMarkers();
@@ -370,14 +765,64 @@ const setLayerVisibility = (layerKey, visible) => {
 
 const toggleLayer = (layerKey) => {
   if (!map) return;
+  const config = allLayersConfig[layerKey];
+  if (!config) return;
+  
   const isCurrentlyActive = activeLayers.value.includes(layerKey);
-  setLayerVisibility(layerKey, !isCurrentlyActive);
   
   if (isCurrentlyActive) {
+    // 关闭图层
+    setLayerVisibility(layerKey, false);
     activeLayers.value = activeLayers.value.filter(l => l !== layerKey);
+    
+    // 重置地块颜色为默认
+    if (timeAxisLayers.includes(layerKey)) {
+      resetPlotColors();
+    }
   } else {
+    // 开启图层
+    if (config.exclusive) {
+      // 如果是互斥图层，先关闭其他互斥图层
+      activeLayers.value.forEach(existingLayer => {
+        const existingConfig = allLayersConfig[existingLayer];
+        if (existingConfig && existingConfig.exclusive) {
+          setLayerVisibility(existingLayer, false);
+        }
+      });
+      activeLayers.value = activeLayers.value.filter(l => {
+        const existingConfig = allLayersConfig[l];
+        return !existingConfig || !existingConfig.exclusive;
+      });
+    }
+    
+    setLayerVisibility(layerKey, true);
     activeLayers.value.push(layerKey);
+    
+      // 如果是需要时间轴的图层，更新地块颜色
+  if (timeAxisLayers.includes(layerKey) && layerKey !== 'irrigation-system') {
+    updatePlotColors(layerKey, selectedDate.value);
   }
+  }
+  
+  // 检查是否需要显示时间轴
+  timeSliderVisible.value = activeLayers.value.some(layer => timeAxisLayers.includes(layer));
+};
+
+const resetPlotColors = () => {
+  if (!map || !props.geojson) return;
+  
+  const resetData = {
+    ...props.geojson,
+    features: props.geojson.features.map(feature => ({
+      ...feature,
+      properties: {
+        ...feature.properties,
+        layerColor: undefined
+      }
+    }))
+  };
+  
+  map.getSource('plots').setData(resetData);
 };
 
 // This function is no longer needed as toggleLayer handles markers
@@ -560,8 +1005,10 @@ watch(() => props.markers, () => {
 /* Colors by Device Type */
 .type-soil    { --clr:#1DC788; background: #1DC788; }
 .type-weather { --clr:#20DBFD; background: #20DBFD; }
-.type-drone   { --clr:#FFAA00; background: #FFAA00; }
+.type-drone   { --clr:#4ECDC4; background: #4ECDC4; }
 .type-moth    { --clr:#731DC7; background: #731DC7; }
+.type-spore   { --clr:#FF6B6B; background: #FF6B6B; }
+.type-field   { --clr:#FFAA00; background: #FFAA00; }
 
 /* Styles by Device Status */
 .state-offline {
@@ -610,12 +1057,14 @@ watch(() => props.markers, () => {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(10, 29, 61, 0.85);
+  background: rgba(10, 29, 61, 0.9);
   backdrop-filter: blur(5px);
   border-radius: 8px;
-  padding: 10px 20px;
+  padding: 15px 20px;
   display: flex;
-  gap: 15px;
+  flex-wrap: wrap; /* 允许换行 */
+  gap: 10px;
+  max-width: 80%; /* 限制最大宽度 */
   z-index: 10;
   border: 1px solid rgba(0, 170, 255, 0.5);
   box-shadow: 0 0 12px rgba(0, 170, 255, 0.3);
@@ -630,6 +1079,8 @@ watch(() => props.markers, () => {
   cursor: pointer;
   font-size: 14px;
   transition: all 0.3s ease;
+  white-space: nowrap; /* 防止文字换行 */
+  flex-shrink: 0; /* 防止按钮被压缩 */
 }
 
 .layer-control-btn:hover {
@@ -646,13 +1097,216 @@ watch(() => props.markers, () => {
 }
 
 
-.layer-item :deep(.el-checkbox__label) {
-  color: #e6e8eb;
+/* Device Legend */
+.device-legend {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 29, 61, 0.9);
+  backdrop-filter: blur(5px);
+  border-radius: 8px;
+  padding: 16px 20px;
+  z-index: 10;
+  border: 1px solid rgba(0, 170, 255, 0.5);
+  box-shadow: 0 0 12px rgba(0, 170, 255, 0.3);
+  min-width: 400px;
 }
 
-.layer-item :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: #00aaff;
-  border-color: #00aaff;
+.legend-title {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+
+.legend-item.active {
+  opacity: 1;
+  background-color: rgba(0, 170, 255, 0.2);
+}
+
+.legend-item:hover {
+  opacity: 1;
+  background-color: rgba(0, 170, 255, 0.1);
+}
+
+.legend-icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.legend-text {
+  color: #a0a6b8;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Time Slider */
+.time-slider {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 29, 61, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 20px 24px;
+  z-index: 10;
+  border: 2px solid rgba(0, 170, 255, 0.6);
+  box-shadow: 0 0 20px rgba(0, 170, 255, 0.4);
+  width: 1200px;
+  max-width: 98vw;
+  overflow: hidden;
+}
+
+.time-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.time-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.current-date {
+  font-size: 14px;
+  color: #a0a6b8;
+  background: rgba(0, 170, 255, 0.2);
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 170, 255, 0.3);
+}
+
+.time-slider-content {
+  position: relative;
+}
+
+.slider-track {
+  position: relative;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 0 10px;
+}
+
+.slider-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(0, 170, 255, 0.3), rgba(0, 170, 255, 0.6));
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+
+.slider-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  background: #00aaff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(0, 170, 255, 0.6);
+  border: 3px solid #ffffff;
+}
+
+.slider-input::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  background: #00aaff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 15px rgba(0, 170, 255, 0.6);
+}
+
+.time-markers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+  pointer-events: none;
+}
+
+.time-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  min-width: 60px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.time-marker.history {
+  background: rgba(255, 193, 7, 0.15);
+  border-color: rgba(255, 193, 7, 0.4);
+}
+
+.time-marker.current {
+  background: rgba(0, 170, 255, 0.25);
+  border-color: rgba(0, 170, 255, 0.6);
+  box-shadow: 0 0 15px rgba(0, 170, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.time-marker.prediction {
+  background: rgba(40, 167, 69, 0.15);
+  border-color: rgba(40, 167, 69, 0.4);
+}
+
+.time-marker .time-label {
+  font-size: 14px;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.3;
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
 }
 
 /* Plot Popup Styles */

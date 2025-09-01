@@ -1,0 +1,311 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370100",
+        "name": "历下区",
+        "crop": "小麦",
+        "areaMu": 12500,
+        "owner": "张建国",
+        "phone": "13812345678",
+        "soilScore": 85,
+        "soilMoisture": 68,
+        "ndvi": 0.72
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[117.0, 36.6], [117.1, 36.6], [117.1, 36.7], [117.0, 36.7], [117.0, 36.6]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370200",
+        "name": "市南区",
+        "crop": "玉米",
+        "areaMu": 9800,
+        "owner": "李美丽",
+        "phone": "13987654321",
+        "soilScore": 78,
+        "soilMoisture": 72,
+        "ndvi": 0.68
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[120.3, 36.0], [120.4, 36.0], [120.4, 36.1], [120.3, 36.1], [120.3, 36.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370300",
+        "name": "张店区",
+        "crop": "水稻",
+        "areaMu": 15600,
+        "owner": "王大力",
+        "phone": "13765432109",
+        "soilScore": 92,
+        "soilMoisture": 75,
+        "ndvi": 0.81
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[118.0, 36.8], [118.1, 36.8], [118.1, 36.9], [118.0, 36.9], [118.0, 36.8]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370400",
+        "name": "市中区",
+        "crop": "蔬菜",
+        "areaMu": 8200,
+        "owner": "赵小芳",
+        "phone": "13654321098",
+        "soilScore": 88,
+        "soilMoisture": 70,
+        "ndvi": 0.75
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[117.5, 34.8], [117.6, 34.8], [117.6, 34.9], [117.5, 34.9], [117.5, 34.8]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370500",
+        "name": "东营区",
+        "crop": "棉花",
+        "areaMu": 18900,
+        "owner": "刘丰收",
+        "phone": "13543210987",
+        "soilScore": 76,
+        "soilMoisture": 65,
+        "ndvi": 0.63
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[118.5, 37.4], [118.6, 37.4], [118.6, 37.5], [118.5, 37.5], [118.5, 37.4]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370600",
+        "name": "芝罘区",
+        "crop": "苹果",
+        "areaMu": 11200,
+        "owner": "孙果园",
+        "phone": "13432109876",
+        "soilScore": 90,
+        "soilMoisture": 73,
+        "ndvi": 0.79
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[121.4, 37.5], [121.5, 37.5], [121.5, 37.6], [121.4, 37.6], [121.4, 37.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370700",
+        "name": "潍城区",
+        "crop": "小麦",
+        "areaMu": 13400,
+        "owner": "陈麦田",
+        "phone": "13321098765",
+        "soilScore": 82,
+        "soilMoisture": 69,
+        "ndvi": 0.71
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[119.1, 36.7], [119.2, 36.7], [119.2, 36.8], [119.1, 36.8], [119.1, 36.7]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370800",
+        "name": "任城区",
+        "crop": "玉米",
+        "areaMu": 16700,
+        "owner": "周玉米",
+        "phone": "13210987654",
+        "soilScore": 79,
+        "soilMoisture": 71,
+        "ndvi": 0.69
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[116.6, 35.4], [116.7, 35.4], [116.7, 35.5], [116.6, 35.5], [116.6, 35.4]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370900",
+        "name": "泰山区",
+        "crop": "蔬菜",
+        "areaMu": 9100,
+        "owner": "吴菜农",
+        "phone": "13109876543",
+        "soilScore": 87,
+        "soilMoisture": 74,
+        "ndvi": 0.76
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[117.1, 36.2], [117.2, 36.2], [117.2, 36.3], [117.1, 36.3], [117.1, 36.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "371000",
+        "name": "环翠区",
+        "crop": "海产品",
+        "areaMu": 6800,
+        "owner": "郑海产",
+        "phone": "13098765432",
+        "soilScore": 75,
+        "soilMoisture": 80,
+        "ndvi": 0.65
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[122.1, 37.5], [122.2, 37.5], [122.2, 37.6], [122.1, 37.6], [122.1, 37.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "371100",
+        "name": "东港区",
+        "crop": "茶叶",
+        "areaMu": 7500,
+        "owner": "林茶叶",
+        "phone": "12987654321",
+        "soilScore": 89,
+        "soilMoisture": 76,
+        "ndvi": 0.78
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[119.5, 35.4], [119.6, 35.4], [119.6, 35.5], [119.5, 35.5], [119.5, 35.4]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "371200",
+        "name": "莱城区",
+        "crop": "生姜",
+        "areaMu": 6200,
+        "owner": "姜生姜",
+        "phone": "12876543210",
+        "soilScore": 91,
+        "soilMoisture": 72,
+        "ndvi": 0.82
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[117.7, 36.2], [117.8, 36.2], [117.8, 36.3], [117.7, 36.3], [117.7, 36.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "371300",
+        "name": "兰山区",
+        "crop": "大蒜",
+        "areaMu": 8900,
+        "owner": "蒜大蒜",
+        "phone": "12765432109",
+        "soilScore": 84,
+        "soilMoisture": 68,
+        "ndvi": 0.73
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[118.3, 35.0], [118.4, 35.0], [118.4, 35.1], [118.3, 35.1], [118.3, 35.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "371400",
+        "name": "德城区",
+        "crop": "小麦",
+        "areaMu": 14500,
+        "owner": "德小麦",
+        "phone": "12654321098",
+        "soilScore": 81,
+        "soilMoisture": 67,
+        "ndvi": 0.70
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[116.3, 37.4], [116.4, 37.4], [116.4, 37.5], [116.3, 37.5], [116.3, 37.4]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "371500",
+        "name": "东昌府区",
+        "crop": "玉米",
+        "areaMu": 17800,
+        "owner": "聊玉米",
+        "phone": "12543210987",
+        "soilScore": 77,
+        "soilMoisture": 70,
+        "ndvi": 0.67
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[115.9, 36.4], [116.0, 36.4], [116.0, 36.5], [115.9, 36.5], [115.9, 36.4]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "371600",
+        "name": "滨城区",
+        "crop": "棉花",
+        "areaMu": 20100,
+        "owner": "滨棉花",
+        "phone": "12432109876",
+        "soilScore": 74,
+        "soilMoisture": 64,
+        "ndvi": 0.61
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[117.9, 37.4], [118.0, 37.4], [118.0, 37.5], [117.9, 37.5], [117.9, 37.4]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "371700",
+        "name": "牡丹区",
+        "crop": "牡丹",
+        "areaMu": 5600,
+        "owner": "菏牡丹",
+        "phone": "12321098765",
+        "soilScore": 93,
+        "soilMoisture": 75,
+        "ndvi": 0.84
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[115.4, 35.2], [115.5, 35.2], [115.5, 35.3], [115.4, 35.3], [115.4, 35.2]]]
+      }
+    }
+  ]
+}

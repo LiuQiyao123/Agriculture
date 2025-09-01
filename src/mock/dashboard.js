@@ -59,55 +59,11 @@ export const getPlantingStructureOptions = (data, themeColors) => {
   };
 };
 
-export const plotGeoJson = {
-  type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [118.3, 36.4], [118.5, 36.4], [118.5, 36.6], [118.3, 36.6], [118.3, 36.4]
-          ]
-        ]
-      },
-      properties: {
-        id: 'P001', 
-        name: '城关镇-01号高标准水稻田', 
-        crop: '水稻', 
-        areaMu: 120.5,
-        soilScore: 85,
-        soilMoisture: 65, 
-        ndvi: 0.85,
-        owner: '张三', 
-        phone: '13800138000'
-      }
-    },
-    {
-      type: 'Feature',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [118.6, 36.7], [118.8, 36.7], [118.8, 36.9], [118.6, 36.9], [118.6, 36.7]
-          ]
-        ]
-      },
-      properties: {
-        id: 'P002', 
-        name: '高新区-玉米种植基地', 
-        crop: '玉米', 
-        areaMu: 89.3,
-        soilScore: 78,
-        soilMoisture: 45, 
-        ndvi: 0.72,
-        owner: '李四', 
-        phone: '13900139000'
-      }
-    }
-  ]
-};
+import shandongCounties from './shandong-counties.json';
+import irrigationSystem from './irrigation-system.json';
+
+export const plotGeoJson = shandongCounties;
+export const irrigationGeoJson = irrigationSystem;
 
 // --- Right Panel Charts ---
 

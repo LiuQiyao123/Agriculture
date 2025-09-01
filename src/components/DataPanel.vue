@@ -42,17 +42,19 @@ const emit = defineEmits(['close']);
   border-radius: 8px;
   border: 1px solid rgba(0, 170, 255, 0.5);
   box-shadow: 0 0 12px rgba(0, 170, 255, 0.3);
-  overflow: hidden;
   background-color: theme.$panel-bg-color; /* Unified background */
 }
 
 .panel-header {
   position: relative;
-  height: 48px;
+  height: 80px !important; /* 强制标题区域高度 */
+  min-height: 80px !important; /* 确保最小高度 */
+  flex-shrink: 0 !important; /* 防止被压缩 */
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-left: 12px;
+  padding-right: 12px;
 
   /* Decorative background */
   &::before {
@@ -72,11 +74,15 @@ const emit = defineEmits(['close']);
 
 .title-text {
   color: theme.$title-color;
-  font-size: theme.$title-font-size;
+  font-size: 16px; /* 恢复正常字体大小 */
   font-weight: bold;
   padding-left: 30px;
-  position: relative; /* Ensure text is above the pseudo-element */
+  position: relative;
   z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
 }
 
 .close-btn {

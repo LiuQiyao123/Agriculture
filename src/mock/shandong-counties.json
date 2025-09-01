@@ -1,0 +1,105 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370100",
+        "name": "历下区",
+        "crop": "小麦",
+        "areaMu": 12500,
+        "owner": "张建国",
+        "phone": "13812345678",
+        "soilScore": 85,
+        "soilMoisture": 68,
+        "ndvi": 0.72
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [117.0, 36.6], [117.2, 36.6], [117.2, 36.8], [117.0, 36.8], [117.0, 36.6]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370200",
+        "name": "市南区",
+        "crop": "玉米",
+        "areaMu": 9800,
+        "owner": "李美丽",
+        "phone": "13987654321",
+        "soilScore": 78,
+        "soilMoisture": 72,
+        "ndvi": 0.68
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [120.3, 36.0], [120.5, 36.0], [120.5, 36.2], [120.3, 36.2], [120.3, 36.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370300",
+        "name": "张店区",
+        "crop": "水稻",
+        "areaMu": 15600,
+        "owner": "王大力",
+        "phone": "13765432109",
+        "soilScore": 92,
+        "soilMoisture": 75,
+        "ndvi": 0.81
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [118.0, 36.8], [118.2, 36.8], [118.2, 37.0], [118.0, 37.0], [118.0, 36.8]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370400",
+        "name": "市中区",
+        "crop": "蔬菜",
+        "areaMu": 8200,
+        "owner": "赵小芳",
+        "phone": "13654321098",
+        "soilScore": 88,
+        "soilMoisture": 70,
+        "ndvi": 0.75
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [117.5, 34.8], [117.7, 34.8], [117.7, 35.0], [117.5, 35.0], [117.5, 34.8]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "370500",
+        "name": "东营区",
+        "crop": "棉花",
+        "areaMu": 18900,
+        "owner": "刘丰收",
+        "phone": "13543210987",
+        "soilScore": 76,
+        "soilMoisture": 65,
+        "ndvi": 0.63
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [118.5, 37.4], [118.7, 37.4], [118.7, 37.6], [118.5, 37.6], [118.5, 37.4]
+        ]]
+      }
+    }
+  ]
+}

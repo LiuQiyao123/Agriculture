@@ -1,0 +1,85 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "IR001",
+        "name": "黄河干渠主线路",
+        "type": "干渠",
+        "capacity": 50,
+        "status": "运行中"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [116.5, 37.0], [116.8, 36.8], [117.2, 36.9], [117.6, 36.7], [118.0, 36.8], [118.4, 36.6], [118.8, 36.7], [119.2, 36.5]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "IR002",
+        "name": "小清河灌溉支线",
+        "type": "支渠",
+        "capacity": 20,
+        "status": "运行中"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [117.0, 36.8], [117.3, 36.6], [117.6, 36.7], [117.9, 36.5], [118.2, 36.6], [118.5, 36.4]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "IR003",
+        "name": "大汶河灌溉网络",
+        "type": "灌溉网",
+        "capacity": 30,
+        "status": "运行中"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [117.5, 36.0], [117.8, 35.8], [118.1, 35.9], [118.4, 35.7], [118.7, 35.8], [119.0, 35.6]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "IR004",
+        "name": "沂河灌溉系统",
+        "type": "灌溉系统",
+        "capacity": 25,
+        "status": "运行中"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [118.0, 35.8], [118.3, 35.6], [118.6, 35.7], [118.9, 35.5], [119.2, 35.6], [119.5, 35.4]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "IR005",
+        "name": "胶莱河灌溉支线",
+        "type": "支渠",
+        "capacity": 15,
+        "status": "运行中"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [119.0, 36.5], [119.3, 36.3], [119.6, 36.4], [119.9, 36.2], [120.2, 36.3], [120.5, 36.1]
+        ]
+      }
+    }
+  ]
+}
