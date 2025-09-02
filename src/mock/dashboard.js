@@ -343,10 +343,10 @@ export const supplyDemandData = {
   }),
   // Single line of data representing combined supply/demand metric (e.g., price index)
   values: [
-    // Past 30 days (actual data)
-    ...Array.from({ length: 30 }, () => 100 + Math.random() * 20 - 10),
-    // Next 30 days (predicted data)
-    ...Array.from({ length: 30 }, () => 105 + Math.random() * 25 - 12.5),
+    // Past 30 days (actual data) - 供需指数，波动更平滑
+    ...Array.from({ length: 30 }, () => Number((95 + Math.random() * 10 - 5).toFixed(2))),
+    // Next 30 days (predicted data) - 供需指数，波动更平滑
+    ...Array.from({ length: 30 }, () => Number((98 + Math.random() * 8 - 4).toFixed(2))),
   ],
   todayIndex: 29, // Index of "today"
 };
@@ -358,7 +358,16 @@ export const getSupplyDemandOptions = (data, themeColors) => {
 
   return {
     tooltip: {
-      trigger: 'axis'
+      trigger: 'axis',
+      formatter: function(params) {
+        let result = params[0].axisValue + '<br/>';
+        params.forEach(param => {
+          if (param.value !== null && param.value !== undefined && param.seriesName !== '基准阈值') {
+            result += param.marker + param.seriesName + ': ' + param.value + '%<br/>';
+          }
+        });
+        return result;
+      }
     },
     grid: {
       left: '3%',
@@ -376,10 +385,17 @@ export const getSupplyDemandOptions = (data, themeColors) => {
     },
     yAxis: {
       type: 'value',
-      name: '供需指数',
-      axisLabel: { formatter: '{value}', fontSize: 13 },
+      name: '供需指数 (%)',
+      nameTextStyle: { color: themeColors.textColor },
+      axisLabel: { 
+        formatter: '{value}%', 
+        fontSize: 13,
+        color: themeColors.textColor
+      },
       axisLine: { show: true, lineStyle: { color: themeColors.axisLineColor } },
       splitLine: { lineStyle: { color: themeColors.splitLineColor } },
+      min: 90, // 设置最小值
+      max: 110, // 设置最大值
     },
     series: [
       {
@@ -388,8 +404,14 @@ export const getSupplyDemandOptions = (data, themeColors) => {
         data: historicData,
         smooth: true,
         showSymbol: false,
+        label: { 
+          show: true, 
+          formatter: '{c}%',
+          color: '#00ff7f',
+          fontSize: 12
+        },
         itemStyle: { color: '#00ff7f' },
-        lineStyle: { type: 'solid' }
+        lineStyle: { type: 'solid', width: 2 }
       },
       {
         name: '预测数据',
@@ -397,11 +419,32 @@ export const getSupplyDemandOptions = (data, themeColors) => {
         data: forecastData,
         smooth: true,
         showSymbol: false,
+        label: { 
+          show: true, 
+          formatter: '{c}%',
+          color: '#00ff7f',
+          fontSize: 12
+        },
         itemStyle: { color: '#00ff7f' },
-        lineStyle: { type: 'dashed' },
+        lineStyle: { type: 'dashed', width: 2 },
       },
+      // 添加100%阈值线
+      {
+        name: '基准阈值',
+        type: 'line',
+        data: Array(60).fill(100), // 60个数据点，都是100
+        smooth: false,
+        showSymbol: false,
+        label: { show: false }, // 不显示标签
+        itemStyle: { color: '#ff6b6b' },
+        lineStyle: { 
+          type: 'solid', 
+          width: 2,
+          color: '#ff6b6b',
+          opacity: 0.8
+        },
+        z: 1 // 确保阈值线在最上层
+      }
     ],
-
-
   };
 }; 

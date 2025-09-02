@@ -40,7 +40,9 @@
           :class="{ active: deviceTypeVisibility[deviceType.key] }"
           @click="toggleDeviceType(deviceType.key)"
         >
-          <div class="legend-icon" :style="{ backgroundColor: deviceType.color }"></div>
+          <div class="legend-icon" :class="`type-${deviceType.key}`">
+            <i :class="deviceType.icon"></i>
+          </div>
           <span class="legend-text">{{ deviceType.name }}</span>
         </div>
       </div>
@@ -80,6 +82,13 @@
         </div>
       </div>
     </div>
+
+    <!-- 设备详情面板 -->
+    <DeviceDetailPanel
+      :visible="deviceDetailVisible"
+      :device="selectedDevice"
+      @close="deviceDetailVisible = false"
+    />
   </div>
 </template>
 
@@ -89,6 +98,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import devices from '../mock/devices.json';
 import irrigationSystem from '../mock/irrigation-system.json';
+import DeviceDetailPanel from './DeviceDetailPanel.vue';
 // import { generateChlorophyllGrid, chlorophyllColorScale } from '../mock/gis.js'; // Heatmap feature disabled for now
 
 const props = defineProps({
@@ -98,6 +108,10 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['marker-click', 'plot-analysis']);
+
+// 设备详情面板状态
+const deviceDetailVisible = ref(false);
+const selectedDevice = ref(null);
 const mapContainer = ref(null);
 let map = null;
 
@@ -225,15 +239,7 @@ const layerColors = {
   }
 };
 
-// 设备图例配置
-const deviceTypes = [
-  { key: 'soil', name: '墒情传感器', visible: true, color: '#1DC788' },
-  { key: 'weather', name: '气象监测站', visible: true, color: '#20DBFD' },
-  { key: 'field', name: '田间监测站', visible: true, color: '#FFAA00' },
-  { key: 'moth', name: '虫情测报仪', visible: true, color: '#731DC7' },
-  { key: 'spore', name: '孢子测报仪', visible: true, color: '#FF6B6B' },
-  { key: 'drone', name: '巡飞无人机', visible: true, color: '#4ECDC4' }
-];
+
 
 const deviceTypeVisibility = ref({
   soil: true,
@@ -527,15 +533,30 @@ const addMarkers = () => {
     else if (type.includes('spore')) typeClass = 'type-spore';
     else if (type.includes('field')) typeClass = 'type-field';
 
-    el.className = `custom-marker ${typeClass} ${statusClass}`;
+    // 创建设备图标
+    el.className = `device-marker ${typeClass} ${statusClass}`;
+    
+    // 添加设备图标
+    const iconElement = document.createElement('i');
+    iconElement.className = getDeviceIconClass(type);
+    el.appendChild(iconElement);
+    
+    // 添加状态指示器
+    const statusIndicator = document.createElement('div');
+    statusIndicator.className = 'status-indicator';
+    el.appendChild(statusIndicator);
+    
     wrap.appendChild(el);
 
     const marker = new maplibregl.Marker({ element: wrap })
       .setLngLat(markerInfo.coordinates)
-      .setPopup(new maplibregl.Popup({ offset: 16 }).setHTML(`<div class="marker-popup"><div><strong>${markerInfo.name || markerInfo.id || '设备'}</strong></div><div>${markerInfo.type || ''}</div><div>状态: ${markerInfo.status || '在线'}</div>${markerInfo.lastSeen ? `<div>上报: ${markerInfo.lastSeen}</div>` : ''}</div>`))
       .addTo(map);
+      
     marker.getElement().addEventListener('click', (e) => {
       e.stopPropagation();
+      // 显示设备详情面板
+      selectedDevice.value = markerInfo;
+      deviceDetailVisible.value = true;
       emit('marker-click', markerInfo);
     });
     markerInstances.push(marker);
@@ -566,6 +587,29 @@ const addMarkers = () => {
     }
   });
 };
+
+// 获取设备图标类名
+const getDeviceIconClass = (type) => {
+  const iconMap = {
+    soil: 'el-icon-monitor',
+    weather: 'el-icon-cloudy',
+    drone: 'el-icon-plane',
+    moth: 'el-icon-bug',
+    spore: 'el-icon-microscope',
+    field: 'el-icon-crop'
+  };
+  return iconMap[type] || 'el-icon-monitor';
+};
+
+// 设备图例配置（更新为包含图标信息）
+const deviceTypes = [
+  { key: 'soil', name: '墒情传感器', visible: true, color: '#1DC788', icon: 'el-icon-monitor' },
+  { key: 'weather', name: '气象监测站', visible: true, color: '#20DBFD', icon: 'el-icon-cloudy' },
+  { key: 'field', name: '田间监测站', visible: true, color: '#FFAA00', icon: 'el-icon-crop' },
+  { key: 'moth', name: '虫情测报仪', visible: true, color: '#731DC7', icon: 'el-icon-bug' },
+  { key: 'spore', name: '孢子测报仪', visible: true, color: '#FF6B6B', icon: 'el-icon-microscope' },
+  { key: 'drone', name: '巡飞无人机', visible: true, color: '#4ECDC4', icon: 'el-icon-plane' }
+];
 
 const updateMapData = () => {
   if (!map) return;
@@ -960,78 +1004,67 @@ watch(() => props.markers, () => {
 }
 
 
-/* 水滴式 Marker  */
-/* 统一尺寸与颜色变量，方便后期调整 */
-.custom-marker{
-  --size : 36px;            /* 圆直径 */
-  --dot  : 12px;            /* 内白点直径 */
-  --clr  : #00aaff;         /* 主色 */
-
-  width: var(--size);
-  height: var(--size);
-  background: var(--clr, #00aaff);
-  border-radius:50%;
-  position:relative;
-  cursor:pointer;
-  box-shadow:0 0 8px rgba(0,170,255,.9);
+/* 设备标记样式 */
+.device-marker {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* 内部白点 */
-.custom-marker::before{
-  content:'';
-  position:absolute;
-  width:var(--dot);
-  height:var(--dot);
-  background:#fff;
-  border-radius:50%;
-  left:50%;top:50%;
-  transform:translate(-50%,-50%);
+.device-marker i {
+  font-size: 16px;
+  color: #fff;
+  z-index: 2;
 }
 
-/* 正下方等腰三角尖 */
-.custom-marker::after{
-  content:'';
-  position:absolute;
-  left:50%;
-  top:calc(100% - 6px);                 /* 紧贴圆底 */
-  transform:translateX(-50%);
-  width:0;height:0;
-  border-left: calc(var(--size)*0.42) solid transparent;
-  border-right:calc(var(--size)*0.42) solid transparent;
-  border-top: calc(var(--size)*0.55) solid var(--clr, #00aaff);
-  filter:drop-shadow(0 0 4px rgba(0,170,255,.8));
+/* 设备类型颜色 */
+.device-marker.type-soil { background: #1DC788; }
+.device-marker.type-weather { background: #20DBFD; }
+.device-marker.type-drone { background: #4ECDC4; }
+.device-marker.type-moth { background: #731DC7; }
+.device-marker.type-spore { background: #FF6B6B; }
+.device-marker.type-field { background: #FFAA00; }
+
+/* 状态指示器 */
+.status-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
 }
 
-/* Colors by Device Type */
-.type-soil    { --clr:#1DC788; background: #1DC788; }
-.type-weather { --clr:#20DBFD; background: #20DBFD; }
-.type-drone   { --clr:#4ECDC4; background: #4ECDC4; }
-.type-moth    { --clr:#731DC7; background: #731DC7; }
-.type-spore   { --clr:#FF6B6B; background: #FF6B6B; }
-.type-field   { --clr:#FFAA00; background: #FFAA00; }
-
-/* Styles by Device Status */
-.state-offline {
-  opacity: 0.4;
+.device-marker.state-online .status-indicator {
+  background: #52c41a;
 }
-.state-alarm {
+
+.device-marker.state-offline .status-indicator {
+  background: #a0a6b8;
+}
+
+.device-marker.state-alarm .status-indicator {
+  background: #ff4d4f;
   animation: pulse-red 1.4s infinite;
 }
 
-@keyframes pulse-red {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.8);
-  }
-  70% {
-    box-shadow: 0 0 0 12px rgba(255, 77, 79, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
-  }
+/* 悬停效果 */
+.device-marker:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
-/* Streamlight for online devices (JS adds/removes this class) */
-.marker-shine {
+/* 流光效果 */
+.device-marker.marker-shine {
   animation: pulse-blue 1.2s ease-out;
 }
 
@@ -1044,6 +1077,18 @@ watch(() => props.markers, () => {
   }
   100% {
     box-shadow: 0 0 0 0 rgba(0, 170, 255, 0);
+  }
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.8);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(255, 77, 79, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
   }
 }
 
@@ -1150,11 +1195,26 @@ watch(() => props.markers, () => {
 }
 
 .legend-icon {
-  width: 12px;
-  height: 12px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.legend-icon i {
+  font-size: 12px;
+  color: #fff;
+}
+
+.legend-icon.type-soil { background: #1DC788; }
+.legend-icon.type-weather { background: #20DBFD; }
+.legend-icon.type-drone { background: #4ECDC4; }
+.legend-icon.type-moth { background: #731DC7; }
+.legend-icon.type-spore { background: #FF6B6B; }
+.legend-icon.type-field { background: #FFAA00; }
 
 .legend-text {
   color: #a0a6b8;

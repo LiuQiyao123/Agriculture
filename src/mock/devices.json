@@ -1,26 +1,156 @@
 [
   {
     "id": "SOIL-001",
+    "name": "墒情传感器-01",
     "coordinates": [118.6, 36.7],
     "type": "soil",
-    "status": "online"
+    "status": "online",
+    "battery": 85,
+    "lastSeen": "2024-01-15 10:30:00",
+    "town": "城关镇",
+    "data": {
+      "soilMoisture": 45.8,
+      "soilTemperature": 18.5,
+      "ph": 6.8
+    },
+    "images": [
+      "https://via.placeholder.com/300x200/1DC788/ffffff?text=墒情传感器图像",
+      "https://via.placeholder.com/300x200/1DC788/ffffff?text=土壤光谱数据"
+    ]
   },
   {
     "id": "WEATHER-001",
+    "name": "气象监测站-01",
     "coordinates": [118.7, 36.6],
     "type": "weather",
-    "status": "online"
+    "status": "online",
+    "battery": 92,
+    "lastSeen": "2024-01-15 10:25:00",
+    "town": "高新区",
+    "data": {
+      "temperature": 22.3,
+      "humidity": 65.2,
+      "windSpeed": 3.2,
+      "rainfall": 0.0
+    },
+    "images": [
+      "https://via.placeholder.com/300x200/20DBFD/ffffff?text=气象站图像",
+      "https://via.placeholder.com/300x200/20DBFD/ffffff?text=气象数据图表"
+    ]
   },
   {
     "id": "DRONE-001",
+    "name": "巡飞无人机-01",
     "coordinates": [118.5, 36.5],
     "type": "drone",
-    "status": "online"
+    "status": "online",
+    "battery": 78,
+    "lastSeen": "2024-01-15 10:20:00",
+    "town": "开发区",
+    "data": {
+      "altitude": 120.5,
+      "speed": 15.2,
+      "coverage": 85.6
+    },
+    "images": [
+      "https://via.placeholder.com/300x200/4ECDC4/ffffff?text=无人机航拍图像",
+      "https://via.placeholder.com/300x200/4ECDC4/ffffff?text=飞行轨迹数据"
+    ]
   },
-    {
+  {
     "id": "MOTH-001",
+    "name": "虫情测报仪-01",
     "coordinates": [118.8, 36.55],
     "type": "moth",
-    "status": "alarm"
+    "status": "alarm",
+    "battery": 45,
+    "lastSeen": "2024-01-15 10:15:00",
+    "town": "城关镇",
+    "data": {
+      "mothCount": 156,
+      "trapType": "性诱剂",
+      "riskLevel": "high"
+    },
+    "images": [
+      "https://via.placeholder.com/300x200/731DC7/ffffff?text=虫情监测图像",
+      "https://via.placeholder.com/300x200/731DC7/ffffff?text=虫情分析报告"
+    ]
+  },
+  {
+    "id": "SPORE-001",
+    "name": "孢子测报仪-01",
+    "coordinates": [118.4, 36.8],
+    "type": "spore",
+    "status": "online",
+    "battery": 88,
+    "lastSeen": "2024-01-15 10:10:00",
+    "town": "高新区",
+    "data": {
+      "sporeCount": 23,
+      "diseaseType": "稻瘟病",
+      "riskLevel": "low"
+    },
+    "images": [
+      "https://via.placeholder.com/300x200/FF6B6B/ffffff?text=孢子监测图像",
+      "https://via.placeholder.com/300x200/FF6B6B/ffffff?text=病害分析报告"
+    ]
+  },
+  {
+    "id": "FIELD-001",
+    "name": "田间监测站-01",
+    "coordinates": [118.9, 36.4],
+    "type": "field",
+    "status": "online",
+    "battery": 95,
+    "lastSeen": "2024-01-15 10:05:00",
+    "town": "开发区",
+    "data": {
+      "cropType": "小麦",
+      "growthStage": "抽穗期",
+      "healthIndex": 87.5
+    },
+    "images": [
+      "https://via.placeholder.com/300x200/FFAA00/ffffff?text=田间监测图像",
+      "https://via.placeholder.com/300x200/FFAA00/ffffff?text=作物生长数据"
+    ]
+  },
+  {
+    "id": "SOIL-002",
+    "name": "墒情传感器-02",
+    "coordinates": [118.3, 36.9],
+    "type": "soil",
+    "status": "offline",
+    "battery": 0,
+    "lastSeen": "2024-01-14 18:30:00",
+    "town": "城关镇",
+    "data": {
+      "soilMoisture": 42.1,
+      "soilTemperature": 17.8,
+      "ph": 6.9
+    },
+    "images": [
+      "https://via.placeholder.com/300x200/1DC788/ffffff?text=墒情传感器图像",
+      "https://via.placeholder.com/300x200/1DC788/ffffff?text=土壤光谱数据"
+    ]
+  },
+  {
+    "id": "WEATHER-002",
+    "name": "气象监测站-02",
+    "coordinates": [118.6, 36.3],
+    "type": "weather",
+    "status": "online",
+    "battery": 89,
+    "lastSeen": "2024-01-15 10:00:00",
+    "town": "开发区",
+    "data": {
+      "temperature": 21.8,
+      "humidity": 68.5,
+      "windSpeed": 2.8,
+      "rainfall": 0.0
+    },
+    "images": [
+      "https://via.placeholder.com/300x200/20DBFD/ffffff?text=气象站图像",
+      "https://via.placeholder.com/300x200/20DBFD/ffffff?text=气象数据图表"
+    ]
   }
 ]

@@ -44,6 +44,21 @@
           <div class="chart-container">
             <EchartsWrapper :options="supplyDemandOptions" />
           </div>
+          <!-- 供需关系说明区域 -->
+          <div class="supply-demand-legend">
+            <div class="legend-item">
+              <span class="legend-dot supply-excess"></span>
+              <span class="legend-text">>100% 供大于需</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot supply-balance"></span>
+              <span class="legend-text">=100% 供需平衡</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot supply-shortage"></span>
+              <span class="legend-text"><100% 供小于需</span>
+            </div>
+          </div>
           <div class="ai-report">
              <p class="report-text">{{ supplyDemandSuggestion }}</p>
           </div>
@@ -925,6 +940,7 @@ const getSoilMoistureHistoryOptions = (plot) => {
 .chart-container {
   flex: 1;
   min-height: 0; /* Important for flexbox to allow shrinking */
+  height: 250px; /* 给图表一个合适的高度 */
 }
 
 .ai-report {
@@ -1294,6 +1310,49 @@ em.status-good { color: #52c41a; font-style: normal; }
   height: 120px;
   border-radius: 6px;
   object-fit: cover;
+}
+
+/* 供需关系说明样式 */
+.supply-demand-legend {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-dot.supply-excess {
+  background: #ff6b6b;
+}
+
+.legend-dot.supply-balance {
+  background: #52c41a;
+}
+
+.legend-dot.supply-shortage {
+  background: #faad14;
+}
+
+.legend-text {
+  color: #a0a6b8;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .image-info {
