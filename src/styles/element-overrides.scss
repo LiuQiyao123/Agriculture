@@ -2,35 +2,39 @@
 
 // Centralized Dark Theme Overrides for Element Plus Components
 
-// 1. Dark Table Style
-.dark-table {
-  // Use CSS variables to override Element Plus defaults
-  --el-table-bg-color: transparent;
-  --el-table-tr-bg-color: transparent;
-  --el-table-header-bg-color: transparent;
-  --el-table-border-color: #{theme.$border-color};
-  --el-table-row-hover-bg-color: #{rgba(theme.$primary-accent-color, 0.08)};
-  // 修正：Element Plus 使用的真正变量名是 --el-fill-color-lighter
-  --el-fill-color-lighter: #{rgba(255, 255, 255, 0.05)};
-  // 高亮当前行（可选）
-  --el-table-current-row-bg-color: #{rgba(theme.$primary-accent-color, 0.12)};
-  
+// 1. Global Table Theme (apply to all Element Plus tables)
+// Palette from spec image
+// 默认色1: #0B192B, 默认色2: #122236, 点击色(选中): #1B375C, 经过色(hover): #15273D
+.el-table {
+  // Header
   .el-table__header-wrapper th {
     color: theme.$title-color;
     background-color: transparent !important;
   }
 
+  // Default row text color
   .el-table__row {
     color: theme.$text-color;
   }
-  
-  .el-table__row td.el-table__cell {
-    background-color: transparent;
+
+  // Default row background 1
+  .el-table__body tr.el-table__row td.el-table__cell {
+    background-color: #0B192B;
   }
 
-  // This is a fallback for older versions, the CSS variable is preferred.
+  // Default row background 2 (striped)
   &.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
-    background-color: rgba(255, 255, 255, 0.05) !important;
+    background-color: #122236 !important;
+  }
+
+  // Hover color (经过色)
+  .el-table__body tr:hover > td.el-table__cell {
+    background-color: #15273D !important;
+  }
+
+  // Current row / clicked color (点击色)
+  .el-table__body tr.current-row > td.el-table__cell {
+    background-color: #1B375C !important;
   }
 }
 

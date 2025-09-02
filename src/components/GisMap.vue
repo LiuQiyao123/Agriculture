@@ -1,6 +1,8 @@
 <template>
   <div class="gis-map-wrapper">
     <div ref="mapContainer" class="map-container"></div>
+    <!-- Map radial mask overlay -->
+    <div class="map-mask" aria-hidden="true"></div>
 
     <!-- View Switcher -->
     <div class="view-switcher">
@@ -964,6 +966,17 @@ watch(() => props.markers, () => {
   height: 100%;
 }
 
+/* Radial mask overlay above the map, below UI controls */
+.map-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2; /* 高于底图，但低于控件/弹窗 */
+  background: radial-gradient( ellipse at 50% 50%, rgba(13,27,28,0) 0%, rgba(13,27,28,0.04) 40%, rgba(13,27,28,0.7) 61%, rgba(13,27,28,1) 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
 /* View Switcher */
 .view-switcher {
   position: absolute;
@@ -1093,6 +1106,10 @@ watch(() => props.markers, () => {
 }
 
 .marker-popup { color: #e6e8eb; font-size: 12px; }
+/* 确保弹窗在遮罩之上 */
+::deep(.maplibregl-popup) {
+  z-index: 5;
+}
 .maplibregl-ctrl-attrib-inner a { color: #ccc !important; }
 .map-error { color: red; padding: 20px; text-align: center; }
 

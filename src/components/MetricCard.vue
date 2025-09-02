@@ -34,8 +34,8 @@ defineProps({
 .metric-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 10px;
+  gap: 12px;
+  padding: 8px 10px;
 }
 
 .icon-circle {
@@ -84,18 +84,18 @@ defineProps({
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
-  gap: 2px; /* Add a small gap for spacing */
+  gap: 4px; /* 行距更舒适 */
 }
 
 .value {
-  font-size: 28px;
+  font-size: 24px; /* 指标数字稍微小一些 */
   font-weight: bold;
   color: #ffffff;
   line-height: 1.2;
 }
 
 .details {
-  font-size: 13px;
+  font-size: 12px;
   color: theme.$text-color-secondary;
   
   :deep(span) {
@@ -105,7 +105,7 @@ defineProps({
 
 .title {
   color: theme.$text-color;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 // Color Themes

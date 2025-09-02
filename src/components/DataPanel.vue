@@ -47,36 +47,35 @@ const emit = defineEmits(['close']);
 
 .panel-header {
   position: relative;
-  height: 80px !important; /* 强制标题区域高度 */
-  min-height: 80px !important; /* 确保最小高度 */
-  flex-shrink: 0 !important; /* 防止被压缩 */
+  height: 56px; /* 恢复为正常标题高度 */
+  min-height: 56px;
+  flex-shrink: 0; /* 防止被压缩 */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding: 0 12px; /* 统一左右内边距，去掉额外上边距 */
 
   /* Decorative background */
   &::before {
     content: '';
     position: absolute;
     left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 320px; 
+    top: 0;
+    transform: none;
+    width: 300px; 
     height: 100%;
     background-image: url('@/assets/images/模块基础.svg');
     background-repeat: no-repeat;
-    background-size: contain;
+    background-size: 100% auto;
     background-position: left center;
   }
 }
 
 .title-text {
   color: theme.$title-color;
-  font-size: 16px; /* 恢复正常字体大小 */
+  font-size: 16px; /* 标题字号一致 */
   font-weight: bold;
-  padding-left: 30px;
+  padding-left: 24px;
   position: relative;
   z-index: 1;
   white-space: nowrap;
@@ -104,7 +103,9 @@ const emit = defineEmits(['close']);
 }
 
 .panel-content {
-  padding: 20px;
+  padding: clamp(12px, 1.2vw, 20px); /* 响应式内边距，兼容不同分辨率 */
   flex-grow: 1;
+  min-width: 0; /* 防止子元素溢出导致爆框 */
+  min-height: 0; /* 允许在父级flex里正确收缩 */
 }
 </style> 
