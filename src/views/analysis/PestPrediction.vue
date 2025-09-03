@@ -2,48 +2,90 @@
   <div class="page-container">
     <h1 class="page-title">病虫害分析与预测</h1>
     <div class="analysis-container">
-      <el-row :gutter="20" class="top-row">
-        <el-col :span="16">
-          <DataPanel title="病虫害高发区GIS预警">
-            <div class="placeholder">
-              <img src="https://via.placeholder.com/800x600.png?text=Pest+Alert+Map" alt="Pest Alert Map" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <el-form :inline="true" :model="filters" @submit.prevent>
+          <el-form-item label="病虫害种类">
+            <el-select v-model="filters.pest" placeholder="请选择种类" clearable>
+              <el-option label="稻飞虱" value="稻飞虱" />
+              <el-option label="玉米螟" value="玉米螟" />
+              <el-option label="小麦白粉病" value="小麦白粉病" />
+              <el-option label="稻瘟病" value="稻瘟病" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="预警等级">
+            <el-select v-model="filters.level" placeholder="请选择等级" clearable>
+              <el-option label="高" value="高" />
+              <el-option label="中" value="中" />
+              <el-option label="低" value="低" />
+            </el-select>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <div class="main-content-grid">
+        <DataPanel title="病虫害高发区GIS预警" class="grid-map">
+          <GisMap :show-layer-control="false" :show-sensors="false" />
+        </DataPanel>
+        
+        <div class="grid-ai-panels">
+          <DataPanel title="主要病虫害发生概率" class="ai-panel-transparency">
+            <EchartsWrapper :options="pieChartOptions" />
           </DataPanel>
-        </el-col>
-        <el-col :span="8" class="right-column">
-          <DataPanel title="主要病虫害发生概率">
-             <EchartsWrapper :options="pieChartOptions" />
-          </DataPanel>
-          <DataPanel title="近期虫害数量趋势">
+          <DataPanel title="近期虫害数量趋势" class="ai-panel-suggestion">
              <EchartsWrapper :options="lineChartOptions" />
           </DataPanel>
-        </el-col>
-      </el-row>
-      <el-row class="bottom-row">
-        <el-col :span="24">
-          <DataPanel title="详细预警列表">
-            <el-table :data="tableData" style="width: 100%" height="100%" class="dark-table">
-              <el-table-column prop="plotId" label="地块编号" />
-              <el-table-column prop="pest" label="病虫害种类" />
-              <el-table-column prop="level" label="预警等级">
-                <template #default="{ row }">
-                  <el-tag :type="getRiskTagType(row.level)">{{ row.level }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="probability" label="发生概率(%)" />
-              <el-table-column prop="time" label="预警时间" />
-            </el-table>
+          <DataPanel title="AI 智能分析" class="ai-panel-validation">
+             <div class="ai-panel-content text-content">
+                <p><strong>AI 预测</strong>：</p>
+                <ul>
+                  <li>未来7天稻飞虱有 <strong>65%</strong> 概率进入高发期。</li>
+                  <li>城关镇为主要风险区域。</li>
+                </ul>
+                <p><strong>防治建议</strong>：</p>
+                <ul>
+                  <li>建议立即对 PLOT-023 区域进行无人机精准施药。</li>
+                </ul>
+             </div>
           </DataPanel>
-        </el-col>
-      </el-row>
+        </div>
+
+        <DataPanel title="详细预警列表" class="grid-table">
+          <el-table 
+            ref="tableRef"
+            :data="filteredTableData" 
+            style="width: 100%" 
+            height="100%" 
+            class="dark-table"
+            highlight-current-row
+          >
+            <el-table-column prop="plotId" label="地块编号" />
+            <el-table-column prop="pest" label="病虫害种类" />
+            <el-table-column prop="level" label="预警等级">
+              <template #default="{ row }">
+                <el-tag :type="getRiskTagType(row.level)">{{ row.level }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="probability" label="发生概率(%)" />
+            <el-table-column prop="time" label="预警时间" />
+          </el-table>
+        </DataPanel>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import DataPanel from '@/components/DataPanel.vue';
 import EchartsWrapper from '@/components/EchartsWrapper.vue';
+import GisMap from '@/components/GisMap.vue';
+
+const tableRef = ref(null);
+const filters = ref({
+  pest: '',
+  level: '',
+});
 
 const tableData = ref([
     { plotId: 'PLOT-023', pest: '稻飞虱', level: '高', probability: 85, time: '2023-10-28 11:00' },
@@ -52,6 +94,22 @@ const tableData = ref([
     { plotId: 'PLOT-023', pest: '稻瘟病', level: '中', probability: 55, time: '2023-10-27 15:00' },
 ]);
 
+const filteredTableData = computed(() => {
+  return tableData.value.filter(item => {
+    const pestMatch = filters.value.pest ? item.pest === filters.value.pest : true;
+    const levelMatch = filters.value.level ? item.level === filters.value.level : true;
+    return pestMatch && levelMatch;
+  });
+});
+
+onMounted(() => {
+  nextTick(() => {
+    if (tableRef.value && filteredTableData.value.length > 0) {
+      tableRef.value.setCurrentRow(filteredTableData.value[0]);
+    }
+  });
+});
+
 const getRiskTagType = (level) => {
     if (level === '高') return 'error';
     if (level === '中') return 'warning';
@@ -59,30 +117,16 @@ const getRiskTagType = (level) => {
 };
 
 const pieChartOptions = ref({
-    legend: {
-        top: 'bottom',
-        textStyle: { color: '#ccc' }
-    },
+    legend: { top: 'bottom', textStyle: { color: '#ccc' } },
     tooltip: { trigger: 'item', backgroundColor: 'rgba(0,0,0,0.7)', borderColor: '#333', textStyle: { color: '#fff' } },
-    series: [
-        {
-            name: '病虫害概率',
-            type: 'pie',
-            radius: [20, 110],
-            center: ['50%', '50%'],
-            roseType: 'area',
-            itemStyle: {
-                borderRadius: 5
-            },
-            data: [
-                { value: 40, name: '稻飞虱' },
-                { value: 32, name: '玉米螟' },
-                { value: 28, name: '稻瘟病' },
-                { value: 22, name: '小麦白粉病' },
-                { value: 15, name: '棉铃虫' }
-            ]
-        }
-    ],
+    series: [{
+        name: '病虫害概率', type: 'pie', radius: [20, 110], center: ['50%', '50%'], roseType: 'area',
+        itemStyle: { borderRadius: 5 },
+        data: [
+            { value: 40, name: '稻飞虱' }, { value: 32, name: '玉米螟' }, { value: 28, name: '稻瘟病' },
+            { value: 22, name: '小麦白粉病' }, { value: 15, name: '棉铃虫' }
+        ]
+    }],
     color: ['#ee6666', '#fac858', '#91cc75', '#5470c6', '#73c0de']
 });
 
@@ -103,89 +147,21 @@ const lineChartOptions = ref({
         splitLine: { lineStyle: { type: 'dashed', color: '#444' } },
     },
     tooltip: { trigger: 'axis', backgroundColor: 'rgba(0,0,0,0.7)', borderColor: '#333', textStyle: { color: '#fff' } },
-    series: [
-        {
-            name: '稻飞虱',
-            type: 'line',
-            smooth: true,
-            data: [12, 15, 25, 22, 35, 42, 55],
-            itemStyle: { color: '#ee6666' },
-        },
-    ],
+    series: [{
+        name: '稻飞虱', type: 'line', smooth: true, data: [12, 15, 25, 22, 35, 42, 55], itemStyle: { color: '#ee6666' },
+    }],
 });
 </script>
 
 <style scoped lang="scss">
-.page-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.page-title {
-  color: #fff;
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  flex-shrink: 0;
-}
-
-.analysis-container {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.top-row {
-  flex-grow: 1;
-  margin-bottom: 20px;
-  min-height: 0;
-  & > .el-col {
-    height: 100%;
+@use '@/styles/analysis-layout.scss';
+.text-content {
+  padding: 10px 15px;
+  color: #a0a6b8;
+  font-size: 14px;
+  line-height: 1.6;
+  ul {
+    padding-left: 20px;
   }
-}
-
-.bottom-row {
-  flex-shrink: 0;
-  height: 280px;
-}
-
-.top-row .el-col, .top-row .data-panel, .bottom-row .el-col, .bottom-row .data-panel {
-  height: 100%;
-}
-:deep(.data-panel .content) {
-  height: calc(100% - 40px);
-  padding: 10px;
-}
-
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  height: 100%;
-
-  .data-panel {
-    flex: 1;
-    height: auto;
-    min-height: 0;
-  }
-}
-
-.placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #999;
-  border: 1px dashed #555;
-  border-radius: 4px;
-  background-color: #000;
-}
-
-:deep(.data-panel .content .echarts-wrapper) {
-  width: 100%;
-  height: 100%;
 }
 </style> 

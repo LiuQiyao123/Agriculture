@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-container">
     <!-- Map as the base layer -->
-    <GisMap ref="gisMapRef" :geojson="plots" :layers="gisLayersData" class="base-map" @plot-analysis="handlePlotAnalysis" />
+    <GisMap ref="gisMapRef" :geojson="plots" :layers="gisLayersData" class="base-map" @plot-analysis="handlePlotAnalysis" :show-view-switcher="false" />
 
     <!-- Overlay Panels -->
     <div class="top-metrics overlay-panel">
@@ -144,7 +144,7 @@
               </div>
             </div>
           </div>
-        </DataPanel>
+      </DataPanel>
       </template>
       <template v-else>
         <!-- 地块专属分析报告 -->
@@ -192,7 +192,7 @@
               </div>
             </div>
           </div>
-        </DataPanel>
+      </DataPanel>
       </template>
     </div>
   </div>

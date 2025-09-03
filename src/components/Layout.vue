@@ -11,22 +11,31 @@
         mode="horizontal"
       >
         <template v-for="route in menuRoutes" :key="route.path">
-          <!-- Normal Menu Item -->
-          <el-menu-item v-if="!route.children || route.path === 'intelligent-analysis'" :index="'/' + route.path" @click="navigateTo('/' + route.path)">
-            <el-dropdown v-if="route.path === 'intelligent-analysis'" @command="handleAnalysisCommand">
+          <!-- 有子菜单的项目使用下拉菜单，不绑定点击事件 -->
+          <el-menu-item v-if="route.children && route.children.length > 0" :index="'/' + route.path">
+            <el-dropdown trigger="click" :hide-on-click="true" @command="(cmd)=>handleDropdownCommand(route.path, cmd)">
               <span class="el-dropdown-link" :class="{ 'is-active': isAnalysisActive }">
                 {{ route.meta.title }}
-                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item v-for="subRoute in route.children" :key="subRoute.path" :command="subRoute.path">
+                  <el-dropdown-item 
+                    v-for="subRoute in route.children" 
+                    :key="subRoute.path" 
+                    :command="subRoute.path"
+                    @click="navigateTo('/' + route.path + '/' + subRoute.path)"
+                  >
                     {{ subRoute.meta.title }}
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <span v-else>{{ route.meta.title }}</span>
+          </el-menu-item>
+          
+          <!-- 没有子菜单的项目才绑定点击事件 -->
+          <el-menu-item v-else :index="'/' + route.path" @click="navigateTo('/' + route.path)">
+            <span>{{ route.meta.title }}</span>
           </el-menu-item>
         </template>
       </el-menu>
@@ -93,15 +102,19 @@ const activeMenu = computed(() => {
   return route.path;
 })
 
-const isAnalysisActive = computed(() => route.path.startsWith('/intelligent-analysis'));
+const isAnalysisActive = computed(() => route.path.startsWith('/intelligent-analysis') || route.path.startsWith('/data-center'));
 
 const navigateTo = (path) => {
-  if (path === '/intelligent-analysis') return; // Let the dropdown handle navigation
+  // 检查这个路径是否有子菜单，如果有则不跳转
+  const route = menuRoutes.value.find(r => '/' + r.path === path);
+  if (route && route.children && route.children.length > 0) {
+    return; // 有子菜单的路由不跳转
+  }
   router.push(path);
 }
 
-const handleAnalysisCommand = (command) => {
-  router.push(`/intelligent-analysis/${command}`);
+const handleDropdownCommand = (root, command) => {
+  router.push(`/${root}/${command}`);
 }
 
 const handleNotificationClick = (path) => {
@@ -170,6 +183,21 @@ const handleNotificationClick = (path) => {
     display: inline-block;
     height: 100%;
     line-height: 60px; // Match header height
+  }
+  .el-sub-menu .el-menu-item {
+    background-color: theme.$left-menu-bg;
+    color: theme.$left-menu-text-color;
+    font-size: 16px; // 添加字体大小，与一级菜单保持一致
+    
+    &:hover {
+      background-color: theme.$left-menu-active-bg;
+      color: #fff;
+    }
+    
+    &.is-active {
+      background-color: theme.$left-menu-active-bg;
+      color: theme.$left-menu-active-text-color;
+    }
   }
 }
 

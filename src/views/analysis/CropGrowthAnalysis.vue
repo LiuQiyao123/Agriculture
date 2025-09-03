@@ -2,48 +2,95 @@
   <div class="page-container">
     <h1 class="page-title">作物长势遥感监测</h1>
     <div class="analysis-container">
-      <el-row :gutter="20" class="top-row">
-        <el-col :span="16">
-          <DataPanel title="作物长势NDVI遥感图">
-            <div class="placeholder">
-              <img src="https://via.placeholder.com/800x600.png?text=NDVI+Satellite+Image" alt="NDVI Map" style="width: 100%; height: 100%; object-fit: cover;">
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <el-form :inline="true" :model="filters" @submit.prevent>
+          <el-form-item label="作物类型">
+            <el-select v-model="filters.cropType" placeholder="请选择类型" clearable>
+              <el-option label="水稻" value="水稻" />
+              <el-option label="玉米" value="玉米" />
+              <el-option label="小麦" value="小麦" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="长势状态">
+            <el-select v-model="filters.status" placeholder="请选择状态" clearable>
+              <el-option label="长势偏弱" value="长势偏弱" />
+              <el-option label="长势良好" value="长势良好" />
+            </el-select>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <div class="main-content-grid">
+        <DataPanel title="作物长势NDVI遥感图" class="grid-map">
+          <GisMap :show-layer-control="false" :show-sensors="false" />
+        </DataPanel>
+        
+        <div class="grid-ai-panels">
+          <DataPanel title="AI 诊断结论" class="ai-panel-transparency">
+            <div class="ai-panel-content text-content">
+              <p><strong>诊断结论</strong>：检测到 <strong>127</strong> 个地块存在营养胁迫，预测减产 <strong>8-15%</strong>。</p>
+              <p><strong>处置优先级</strong>：PLOT-007, PLOT-011, PLOT-019, PLOT-023, PLOT-031。</p>
             </div>
           </DataPanel>
-        </el-col>
-        <el-col :span="8" class="right-column">
-          <DataPanel title="地块历史长势分析">
-             <EchartsWrapper :options="lineChartOptions" />
+          <DataPanel title="AI 决策建议" class="ai-panel-suggestion">
+             <div class="ai-panel-content text-content">
+                <p><strong>本周作业计划</strong>：</p>
+                <ol>
+                  <li>48小时内对优先地块追施尿素 15-20kg/亩。</li>
+                  <li>夜间进行 6-10mm 补灌。</li>
+                  <li>喷施 0.3% 磷酸二氢钾叶面肥一次。</li>
+                </ol>
+             </div>
           </DataPanel>
-          <DataPanel title="各地块长势对比">
-             <EchartsWrapper :options="barChartOptions" />
+          <DataPanel title="数据分析验证" class="ai-panel-validation">
+             <el-tabs>
+                <el-tab-pane label="地块历史长势">
+                  <EchartsWrapper :options="lineChartOptions" />
+                </el-tab-pane>
+                <el-tab-pane label="各地块对比">
+                  <EchartsWrapper :options="barChartOptions" />
+                </el-tab-pane>
+              </el-tabs>
           </DataPanel>
-        </el-col>
-      </el-row>
-      <el-row class="bottom-row">
-        <el-col :span="24">
-          <DataPanel title="长势异常地块列表">
-            <el-table :data="tableData" style="width: 100%" height="100%" class="dark-table">
-              <el-table-column prop="plotId" label="地块编号" />
-              <el-table-column prop="cropType" label="作物类型" />
-              <el-table-column prop="ndvi" label="当前NDVI值" />
-              <el-table-column prop="status" label="状态">
-                <template #default="{ row }">
-                  <el-tag :type="row.status === '长势偏弱' ? 'warning' : 'success'">{{ row.status }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="time" label="监测时间" />
-            </el-table>
-          </DataPanel>
-        </el-col>
-      </el-row>
+        </div>
+
+        <DataPanel title="长势异常地块列表" class="grid-table">
+          <el-table 
+            ref="tableRef"
+            :data="filteredTableData" 
+            style="width: 100%" 
+            height="100%" 
+            class="dark-table"
+            highlight-current-row
+          >
+            <el-table-column prop="plotId" label="地块编号" />
+            <el-table-column prop="cropType" label="作物类型" />
+            <el-table-column prop="ndvi" label="当前NDVI值" />
+            <el-table-column prop="status" label="状态">
+              <template #default="{ row }">
+                <el-tag :type="row.status === '长势偏弱' ? 'warning' : 'success'">{{ row.status }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="time" label="监测时间" />
+          </el-table>
+        </DataPanel>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import DataPanel from '@/components/DataPanel.vue';
 import EchartsWrapper from '@/components/EchartsWrapper.vue';
+import GisMap from '@/components/GisMap.vue';
+
+const tableRef = ref(null);
+const filters = ref({
+  cropType: '',
+  status: '',
+});
 
 const tableData = ref([
   { plotId: 'PLOT-007', cropType: '水稻', ndvi: '0.62', status: '长势偏弱', time: '2023-10-27 09:00:00' },
@@ -51,6 +98,22 @@ const tableData = ref([
   { plotId: 'PLOT-003', cropType: '水稻', ndvi: '0.81', status: '长势良好', time: '2023-10-27 09:00:00' },
   { plotId: 'PLOT-011', cropType: '小麦', ndvi: '0.58', status: '长势偏弱', time: '2023-10-27 09:00:00' },
 ]);
+
+const filteredTableData = computed(() => {
+  return tableData.value.filter(item => {
+    const cropMatch = filters.value.cropType ? item.cropType === filters.value.cropType : true;
+    const statusMatch = filters.value.status ? item.status === filters.value.status : true;
+    return cropMatch && statusMatch;
+  });
+});
+
+onMounted(() => {
+  nextTick(() => {
+    if (tableRef.value && filteredTableData.value.length > 0) {
+      tableRef.value.setCurrentRow(filteredTableData.value[0]);
+    }
+  });
+});
 
 const lineChartOptions = ref({
   grid: { top: 30, right: 20, bottom: 30, left: 40 },
@@ -124,76 +187,14 @@ const barChartOptions = ref({
 </script>
 
 <style scoped lang="scss">
-.page-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.page-title {
-  color: #fff;
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  flex-shrink: 0;
-}
-
-.analysis-container {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.top-row {
-  flex-grow: 1;
-  margin-bottom: 20px;
-  min-height: 0;
-  & > .el-col {
-    height: 100%;
+@use '@/styles/analysis-layout.scss';
+.text-content {
+  padding: 10px 15px;
+  color: #a0a6b8;
+  font-size: 14px;
+  line-height: 1.6;
+  ol {
+    padding-left: 20px;
   }
-}
-
-.bottom-row {
-  flex-shrink: 0;
-  height: 280px;
-}
-
-.top-row .el-col, .top-row .data-panel, .bottom-row .el-col, .bottom-row .data-panel {
-  height: 100%;
-}
-:deep(.data-panel .content) {
-  height: calc(100% - 40px);
-  padding: 10px;
-}
-
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  height: 100%;
-
-  .data-panel {
-    flex: 1;
-    height: auto;
-    min-height: 0;
-  }
-}
-
-.placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #999;
-  border: 1px dashed #555;
-  border-radius: 4px;
-  background-color: #000;
-}
-
-:deep(.data-panel .content .echarts-wrapper) {
-  width: 100%;
-  height: 100%;
 }
 </style> 

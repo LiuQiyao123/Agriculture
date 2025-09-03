@@ -1,56 +1,142 @@
 <template>
   <div class="page-container">
-    <h1 class="page-title">墒情监测与旱情分析</h1>
+    <h1 class="page-title">AI墒情预测与智能灌溉决策</h1>
     <div class="moisture-analysis-container">
-      <el-row :gutter="20" class="top-row">
-        <el-col :span="16">
-          <DataPanel title="墒情GIS监测">
-            <GisMap ref="gisMapRef" />
+      <!-- New Filter Bar -->
+      <div class="filter-bar">
+        <el-form :inline="true" :model="filters" @submit.prevent>
+          <el-form-item label="预警区域">
+            <el-input v-model="filters.region" placeholder="请输入区域关键字" clearable />
+          </el-form-item>
+          <el-form-item label="预警等级">
+            <el-select v-model="filters.level" placeholder="请选择等级" clearable>
+              <el-option label="重度干旱" value="重度干旱" />
+              <el-option label="中度干旱" value="中度干旱" />
+            </el-select>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <div class="main-content-grid">
+        <DataPanel title="AI墒情预测地图" class="grid-map">
+          <GisMap
+            ref="gisMapRef"
+            :show-layer-control="false"
+            :show-sensors="false"
+          />
+        </DataPanel>
+        
+        <div class="grid-ai-panels">
+          <DataPanel title="AI模型透明度面板" class="ai-panel-transparency">
+            <div class="ai-panel-content">
+              <div class="model-metric">
+                <span>历史验证准确率:</span>
+                <span class="value success">87.3% ↗</span>
+              </div>
+              <div class="model-metric">
+                <span>本轮预测置信度:</span>
+                <span class="value">91.5%</span>
+              </div>
+              <div class="factor-weights">
+                <p>关键影响因子权重:</p>
+                <ul>
+                  <li>未来降雨概率: 34.2%</li>
+                  <li>土壤类型: 28.7%</li>
+                  <li>历史墒情模式: 22.1%</li>
+                  <li>地形微气候: 15.0%</li>
+                </ul>
+              </div>
+            </div>
           </DataPanel>
-        </el-col>
-        <el-col :span="8" class="right-column">
-          <DataPanel title="历史墒情趋势">
+          <DataPanel title="智能决策建议面板" class="ai-panel-suggestion">
+             <div class="ai-panel-content">
+                <div class="suggestion-card">
+                  <h4>最优灌溉时间窗口</h4>
+                  <p class="suggestion-time">2025.09.05 06:00-10:00</p>
+                  <div class="suggestion-kpis">
+                    <span>预期节水率: <strong>23%</strong></span>
+                    <span>预期增产率: <strong>8.5%</strong></span>
+                  </div>
+                </div>
+                <div class="risk-warning">
+                  <h4>风险预警</h4>
+                  <p>• 城关镇西北部 3日后中旱风险 (78%概率)</p>
+                  <p>• 建议提前调配抗旱设备 120台</p>
+                </div>
+             </div>
+          </DataPanel>
+          <DataPanel title="预测结果验证" class="ai-panel-validation">
              <EchartsWrapper :options="lineChartOptions" />
           </DataPanel>
-          <DataPanel title="各区域墒情对比">
-             <EchartsWrapper :options="barChartOptions" />
-          </DataPanel>
-        </el-col>
-      </el-row>
-      <el-row class="bottom-row">
-        <el-col :span="24">
-          <DataPanel title="干旱预警列表">
-            <el-table :data="tableData" style="width: 100%" height="100%" class="dark-table">
-              <el-table-column prop="region" label="预警区域" />
-              <el-table-column prop="level" label="预警等级">
-                <template #default="{ row }">
-                  <el-tag :type="row.level === '重度干旱' ? 'error' : 'warning'">{{ row.level }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="value" label="当前墒情(%)" />
-              <el-table-column prop="time" label="发布时间" />
-            </el-table>
-          </DataPanel>
-        </el-col>
-      </el-row>
+        </div>
+
+        <DataPanel title="干旱预警列表" class="grid-table">
+          <el-table 
+            ref="tableRef"
+            :data="filteredTableData" 
+            style="width: 100%" 
+            height="100%" 
+            class="dark-table"
+            highlight-current-row
+            @current-change="handleCurrentChange"
+          >
+            <el-table-column prop="region" label="预警区域" />
+            <el-table-column prop="level" label="预警等级">
+              <template #default="{ row }">
+                <el-tag :type="row.level === '重度干旱' ? 'error' : 'warning'">{{ row.level }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="value" label="当前墒情(%)" />
+            <el-table-column prop="time" label="发布时间" />
+          </el-table>
+        </DataPanel>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import DataPanel from '@/components/DataPanel.vue';
 import GisMap from '@/components/GisMap.vue';
 import EchartsWrapper from '@/components/EchartsWrapper.vue';
 
 const gisMapRef = ref(null);
+const tableRef = ref(null);
+const currentRow = ref(null);
+
+const filters = ref({
+  region: '',
+  level: '',
+});
 
 const tableData = ref([
-  { region: '高新区-创新大道88号', level: '重度干旱', value: '18.5', time: '2023-10-27 10:30:15' },
-  { region: '城关镇-幸福路12号', level: '中度干旱', value: '25.2', time: '2023-10-27 09:15:42' },
-  { region: '开发区-工业一路101号', level: '中度干旱', value: '28.9', time: '2023-10-26 17:45:00' },
-  { region: '远郊区-希望田野9号', level: '重度干旱', value: '19.8', time: '2023-10-26 14:22:31' },
+  { id: 1, region: '高新区-创新大道88号', level: '重度干旱', value: '18.5', time: '2023-10-27 10:30:15' },
+  { id: 2, region: '城关镇-幸福路12号', level: '中度干旱', value: '25.2', time: '2023-10-27 09:15:42' },
+  { id: 3, region: '开发区-工业一路101号', level: '中度干旱', value: '28.9', time: '2023-10-26 17:45:00' },
+  { id: 4, region: '远郊区-希望田野9号', level: '重度干旱', value: '19.8', time: '2023-10-26 14:22:31' },
 ]);
+
+const filteredTableData = computed(() => {
+  const { region, level } = filters.value;
+  return tableData.value.filter(item => {
+    const regionMatch = region ? item.region.includes(region) : true;
+    const levelMatch = level ? item.level === level : true;
+    return regionMatch && levelMatch;
+  });
+});
+
+const handleCurrentChange = (val) => {
+  currentRow.value = val;
+};
+
+onMounted(() => {
+  nextTick(() => {
+    if (filteredTableData.value.length > 0) {
+      tableRef.value?.setCurrentRow(filteredTableData.value[0]);
+    }
+  });
+});
 
 const lineChartOptions = ref({
   grid: { top: 30, right: 20, bottom: 30, left: 40 },
@@ -85,99 +171,8 @@ const lineChartOptions = ref({
     },
   ],
 });
-
-const barChartOptions = ref({
-  grid: { top: 30, right: 20, bottom: 30, left: 40 },
-  xAxis: {
-    type: 'category',
-    data: ['高新区', '城关镇', '开发区', '远郊区'],
-    axisLine: { lineStyle: { color: '#888' } },
-    axisLabel: { color: '#ccc' },
-  },
-  yAxis: {
-    type: 'value',
-    axisLine: { show: true, lineStyle: { color: '#888' } },
-    axisLabel: { color: '#ccc' },
-    splitLine: { lineStyle: { type: 'dashed', color: '#444' } },
-  },
-  tooltip: { trigger: 'axis', backgroundColor: 'rgba(0,0,0,0.7)', borderColor: '#333', textStyle: { color: '#fff' } },
-  series: [
-    {
-      name: '当前墒情',
-      type: 'bar',
-      barWidth: '60%',
-      data: [18.5, 25.2, 28.9, 19.8],
-      itemStyle: {
-        color: (params) => (params.value < 20 ? '#ff4d4f' : '#ffc53d'),
-        borderRadius: [2, 2, 0, 0]
-      }
-    },
-  ],
-});
-
 </script>
 
 <style scoped lang="scss">
-.page-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.page-title {
-  color: #fff;
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  flex-shrink: 0;
-}
-
-.moisture-analysis-container {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0; // Important for flex-grow to work correctly inside another flex container
-}
-
-.top-row {
-  flex-grow: 1;
-  margin-bottom: 20px;
-  min-height: 0;
-  & > .el-col {
-    height: 100%;
-  }
-}
-
-.bottom-row {
-  flex-shrink: 0;
-  height: 280px; // Adjusted height for better table visibility
-}
-
-.top-row .el-col, .top-row .data-panel, .bottom-row .el-col, .bottom-row .data-panel {
-  height: 100%;
-}
-:deep(.data-panel .content) {
-  height: calc(100% - 40px);
-  padding: 10px; // Add some padding inside panels
-}
-
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  height: 100%;
-
-  .data-panel {
-    flex: 1;
-    height: auto;
-    min-height: 0;
-  }
-}
-
-// Ensure map and charts fill their container
-:deep(.data-panel .content .gis-map),
-:deep(.data-panel .content .echarts-wrapper) {
-  width: 100%;
-  height: 100%;
-}
+@use '@/styles/analysis-layout.scss';
 </style> 

@@ -2,10 +2,10 @@
   <div class="gis-map-wrapper">
     <div ref="mapContainer" class="map-container"></div>
     <!-- Map radial mask overlay -->
-    <div class="map-mask" aria-hidden="true"></div>
+    <div v-if="showMask" class="map-mask" aria-hidden="true"></div>
 
     <!-- View Switcher -->
-    <div class="view-switcher">
+    <div v-if="showViewSwitcher" class="view-switcher">
       <button 
         v-for="view in views" 
         :key="view.id" 
@@ -16,7 +16,7 @@
       </button>
     </div>
 
-    <div class="layer-control">
+    <div v-if="showLayerControl" class="layer-control">
       <!-- Layer controls will be dynamically generated based on the current view -->
       <template v-if="currentViewLayers">
         <button
@@ -107,6 +107,26 @@ const props = defineProps({
   geojson: Object,
   markers: Array,
   layers: Object,
+  showLayerControl: {
+    type: Boolean,
+    default: true
+  },
+  showViewSwitcher: {
+    type: Boolean,
+    default: false
+  },
+  showMask: {
+    type: Boolean,
+    default: true
+  },
+  showSensors: {
+    type: Boolean,
+    default: true
+  },
+  defaultActiveLayers: {
+    type: Array,
+    default: () => []
+  }
 });
 
 const emit = defineEmits(['marker-click', 'plot-analysis']);
@@ -116,6 +136,9 @@ const deviceDetailVisible = ref(false);
 const selectedDevice = ref(null);
 const mapContainer = ref(null);
 let map = null;
+
+// 山东省包围盒（大致）
+const SHANDONG_BOUNDS = [[115.5, 34.5], [122.5, 38.7]];
 
 // --- Centralized Layer and View Configuration ---
 const allLayersConfig = {
@@ -144,7 +167,11 @@ const views = {
 };
 
 const currentView = ref('production');
-const activeLayers = ref(['plots', 'sensor-devices']); // Default active layers
+const activeLayers = ref([
+  'plots',
+  ...(props.showSensors ? ['sensor-devices'] : []),
+  ...((props.defaultActiveLayers || []).filter(l => l !== 'sensor-devices'))
+]);
 const currentViewLayers = computed(() => views[currentView.value]);
 
 // 时间轴相关状态
@@ -445,6 +472,7 @@ const initializeMap = () => {
     dragRotate: true,
     pitchWithRotate: true,
     keyboard: true,
+    dataCenterUsage: false, // 禁用数据中心
   });
 
   map.on('load', () => {
@@ -506,11 +534,14 @@ const clearMarkers = () => {
 };
 
 const addMarkers = () => {
+  if (!props.showSensors || !map) return; // Strengthened guard clause
   const dataSource = Array.isArray(props.markers) && props.markers.length ? props.markers : devices;
-  if (!map || !dataSource) return;
+  if (!dataSource) return;
+  const bounds = new maplibregl.LngLatBounds();
   dataSource.forEach(markerInfo => {
     if (!Array.isArray(markerInfo.coordinates)) return;
     
+    bounds.extend(markerInfo.coordinates);
     // 检查设备类型是否可见
     const deviceType = (markerInfo.type || 'soil').toLowerCase();
     if (!deviceTypeVisibility.value[deviceType]) return;
@@ -538,15 +569,19 @@ const addMarkers = () => {
     // 创建设备图标
     el.className = `device-marker ${typeClass} ${statusClass}`;
     
-    // 添加设备图标
-    const iconElement = document.createElement('i');
-    iconElement.className = getDeviceIconClass(type);
-    el.appendChild(iconElement);
+    // 使用上传的SVG图片作为设备图标
+    const iconImg = document.createElement('img');
+    iconImg.src = getDeviceIconUrl(type, statusClass);
+    iconImg.alt = type;
+    iconImg.className = 'device-icon-img';
+    el.appendChild(iconImg);
     
-    // 添加状态指示器
-    const statusIndicator = document.createElement('div');
-    statusIndicator.className = 'status-indicator';
-    el.appendChild(statusIndicator);
+    // 仅异常设备显示右上角脉冲红点
+    if (statusClass === 'state-alarm') {
+      const statusIndicator = document.createElement('div');
+      statusIndicator.className = 'status-indicator';
+      el.appendChild(statusIndicator);
+    }
     
     wrap.appendChild(el);
 
@@ -588,19 +623,35 @@ const addMarkers = () => {
       move();
     }
   });
+  // 自适应视野
+  try {
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, { padding: 40, duration: 0 });
+    } else {
+      map.fitBounds(SHANDONG_BOUNDS, { padding: 40, duration: 0 });
+    }
+  } catch {}
 };
 
-// 获取设备图标类名
-const getDeviceIconClass = (type) => {
-  const iconMap = {
-    soil: 'el-icon-monitor',
-    weather: 'el-icon-cloudy',
-    drone: 'el-icon-plane',
-    moth: 'el-icon-bug',
-    spore: 'el-icon-microscope',
-    field: 'el-icon-crop'
+// 根据设备类型与状态，返回 SVG 路径（共18张：每类型 未选/选中/离线）。
+// 规则：
+// - 离线：使用“离线”图；
+// - 告警：使用“未选”图，并叠加右上角脉冲红点；
+// - 其它：使用“未选”图。
+const getDeviceIconUrl = (type, statusClass) => {
+  const cnTypeMap = {
+    soil: '墒情传感器',
+    weather: '气象监测站',
+    field: '田间监测站',
+    moth: '虫情测报仪',
+    spore: '孢子测报仪',
+    drone: '巡飞无人机'
   };
-  return iconMap[type] || 'el-icon-monitor';
+  const base = cnTypeMap[type] || '墒情传感器';
+  let statusSuffix = '未选';
+  if (statusClass === 'state-offline') statusSuffix = '离线';
+  // 告警仍然用“未选”的底图
+  return `/icons/devices/${base} ${statusSuffix} 地图上.svg`;
 };
 
 // 设备图例配置（更新为包含图标信息）
@@ -1020,37 +1071,37 @@ watch(() => props.markers, () => {
 /* 设备标记样式 */
 .device-marker {
   position: relative;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 84px; /* 36 * 1.6 ≈ 58 */
+  height: 84px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: none; /* 去除SVG辉光 */
 }
 
-.device-marker i {
-  font-size: 16px;
-  color: #fff;
-  z-index: 2;
+.device-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: none; /* 确保无滤镜辉光 */
 }
 
-/* 设备类型颜色 */
-.device-marker.type-soil { background: #1DC788; }
-.device-marker.type-weather { background: #20DBFD; }
-.device-marker.type-drone { background: #4ECDC4; }
-.device-marker.type-moth { background: #731DC7; }
-.device-marker.type-spore { background: #FF6B6B; }
-.device-marker.type-field { background: #FFAA00; }
+/* 取消彩色背景，改用SVG本体颜色 */
+.device-marker.type-soil,
+.device-marker.type-weather,
+.device-marker.type-drone,
+.device-marker.type-moth,
+.device-marker.type-spore,
+.device-marker.type-field { background: transparent; }
 
 /* 状态指示器 */
 .status-indicator {
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: 2px;
+  right: 24px;
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -1072,14 +1123,12 @@ watch(() => props.markers, () => {
 
 /* 悬停效果 */
 .device-marker:hover {
-  transform: scale(1.2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transform: scale(1.06);
+  box-shadow: none; /* 悬停也不出现辉光 */
 }
 
-/* 流光效果 */
-.device-marker.marker-shine {
-  animation: pulse-blue 1.2s ease-out;
-}
+/* 关闭标记本体的流光动画，避免SVG出现辉光 */
+.device-marker.marker-shine { animation: none; }
 
 @keyframes pulse-blue {
   0% {

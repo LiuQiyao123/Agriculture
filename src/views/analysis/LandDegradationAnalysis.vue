@@ -2,49 +2,83 @@
   <div class="page-container">
     <h1 class="page-title">耕地退化分析</h1>
     <div class="analysis-container">
-      <el-row :gutter="20" class="top-row">
-        <el-col :span="16">
-          <DataPanel title="耕地退化风险等级分布图">
-            <div class="placeholder">
-              <img src="https://via.placeholder.com/800x600.png?text=Land+Degradation+Risk+Map" alt="Land Degradation Map" style="width: 100%; height: 100%; object-fit: cover;">
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <el-form :inline="true" :model="filters" @submit.prevent>
+          <el-form-item label="风险等级">
+            <el-select v-model="filters.riskLevel" placeholder="请选择等级" clearable>
+              <el-option label="高度风险" value="高度风险" />
+              <el-option label="中度风险" value="中度风险" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="退化因素">
+            <el-select v-model="filters.mainFactor" placeholder="请选择因素" clearable>
+              <el-option label="土壤酸化" value="土壤酸化" />
+              <el-option label="有机质下降" value="有机质下降" />
+              <el-option label="盐碱化" value="盐碱化" />
+              <el-option label="重金属污染" value="重金属污染" />
+            </el-select>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <div class="main-content-grid">
+        <DataPanel title="耕地退化风险等级分布图" class="grid-map">
+          <GisMap :show-layer-control="false" :show-sensors="false" />
+        </DataPanel>
+        
+        <div class="grid-ai-panels">
+          <DataPanel title="AI 诊断结论" class="ai-panel-transparency">
+            <div class="ai-panel-content text-content">
+              <p><strong>诊断结论</strong>：酸化和有机质下降是主要退化因素。</p>
+              <p><strong>核心治理区</strong>：建议优先治理 <strong>12</strong> 个核心区。</p>
             </div>
           </DataPanel>
-        </el-col>
-        <el-col :span="8" class="right-column">
-          <DataPanel title="主要退化成因分析">
+          <DataPanel title="主要退化成因分析" class="ai-panel-suggestion">
              <EchartsWrapper :options="radarChartOptions" />
           </DataPanel>
-          <DataPanel title="高风险耕地占比变化">
+          <DataPanel title="高风险耕地占比变化" class="ai-panel-validation">
              <EchartsWrapper :options="lineChartOptions" />
           </DataPanel>
-        </el-col>
-      </el-row>
-      <el-row class="bottom-row">
-        <el-col :span="24">
-          <DataPanel title="高风险地块列表">
-            <el-table :data="tableData" style="width: 100%" height="100%" class="dark-table">
-              <el-table-column prop="plotId" label="地块编号" />
-              <el-table-column prop="riskLevel" label="风险等级">
-                 <template #default="{ row }">
-                  <el-tag :type="row.riskLevel === '高度风险' ? 'error' : 'warning'">{{ row.riskLevel }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="mainFactor" label="主要退化因素" />
-              <el-table-column prop="organicMatter" label="有机质含量(%)" />
-              <el-table-column prop="ph" label="土壤pH值" />
-              <el-table-column prop="suggestion" label="治理建议" />
-            </el-table>
-          </DataPanel>
-        </el-col>
-      </el-row>
+        </div>
+
+        <DataPanel title="高风险地块列表" class="grid-table">
+          <el-table 
+            ref="tableRef"
+            :data="filteredTableData" 
+            style="width: 100%" 
+            height="100%" 
+            class="dark-table"
+            highlight-current-row
+          >
+            <el-table-column prop="plotId" label="地块编号" />
+            <el-table-column prop="riskLevel" label="风险等级">
+               <template #default="{ row }">
+                <el-tag :type="row.riskLevel === '高度风险' ? 'error' : 'warning'">{{ row.riskLevel }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="mainFactor" label="主要退化因素" />
+            <el-table-column prop="organicMatter" label="有机质含量(%)" />
+            <el-table-column prop="ph" label="土壤pH值" />
+            <el-table-column prop="suggestion" label="治理建议" />
+          </el-table>
+        </DataPanel>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import DataPanel from '@/components/DataPanel.vue';
 import EchartsWrapper from '@/components/EchartsWrapper.vue';
+import GisMap from '@/components/GisMap.vue';
+
+const tableRef = ref(null);
+const filters = ref({
+  riskLevel: '',
+  mainFactor: '',
+});
 
 const tableData = ref([
   { plotId: 'PLOT-088', riskLevel: '高度风险', mainFactor: '土壤酸化', organicMatter: '1.2', ph: '4.8', suggestion: '施用石灰' },
@@ -53,58 +87,42 @@ const tableData = ref([
   { plotId: 'PLOT-096', riskLevel: '高度风险', mainFactor: '重金属污染', organicMatter: '1.3', ph: '6.1', suggestion: '生物修复' },
 ]);
 
+const filteredTableData = computed(() => {
+  return tableData.value.filter(item => {
+    const riskMatch = filters.value.riskLevel ? item.riskLevel === filters.value.riskLevel : true;
+    const factorMatch = filters.value.mainFactor ? item.mainFactor === filters.value.mainFactor : true;
+    return riskMatch && factorMatch;
+  });
+});
+
+onMounted(() => {
+  nextTick(() => {
+    if (tableRef.value && filteredTableData.value.length > 0) {
+      tableRef.value.setCurrentRow(filteredTableData.value[0]);
+    }
+  });
+});
+
 const radarChartOptions = ref({
-  legend: {
-    data: ['地块PLOT-088'],
-    textStyle: { color: '#ccc' },
-    bottom: 5
-  },
+  legend: { data: ['地块PLOT-088'], textStyle: { color: '#ccc' }, bottom: 5 },
   radar: {
     indicator: [
-      { name: '土壤酸化', max: 10 },
-      { name: '有机质下降', max: 10 },
-      { name: '盐碱化', max: 10 },
-      { name: '重金属污染', max: 10 },
-      { name: '土壤板结', max: 10 },
+      { name: '土壤酸化', max: 10 }, { name: '有机质下降', max: 10 }, { name: '盐碱化', max: 10 },
+      { name: '重金属污染', max: 10 }, { name: '土壤板结', max: 10 },
     ],
     shape: 'circle',
     splitNumber: 5,
-    axisName: {
-      color: 'rgb(238, 197, 102)'
-    },
-    splitLine: {
-      lineStyle: {
-        color: [
-          'rgba(238, 197, 102, 0.1)', 'rgba(238, 197, 102, 0.2)',
-          'rgba(238, 197, 102, 0.4)', 'rgba(238, 197, 102, 0.6)',
-          'rgba(238, 197, 102, 0.8)', 'rgba(238, 197, 102, 1)'
-        ].reverse()
-      }
-    },
-    splitArea: {
-      show: false
-    },
-    axisLine: {
-      lineStyle: {
-        color: 'rgba(238, 197, 102, 0.5)'
-      }
-    }
+    axisName: { color: 'rgb(238, 197, 102)' },
+    splitLine: { lineStyle: { color: [
+      'rgba(238, 197, 102, 0.1)','rgba(238, 197, 102, 0.2)','rgba(238, 197, 102, 0.4)',
+      'rgba(238, 197, 102, 0.6)','rgba(238, 197, 102, 0.8)','rgba(238, 197, 102, 1)'
+    ].reverse()}},
+    splitArea: { show: false },
+    axisLine: { lineStyle: { color: 'rgba(238, 197, 102, 0.5)' } }
   },
-  series: [
-    {
-      name: '退化成因分析',
-      type: 'radar',
-      data: [
-        {
-          value: [9, 6, 3, 5, 4],
-          name: '地块PLOT-088'
-        }
-      ]
-    }
-  ],
+  series: [{ name: '退化成因分析', type: 'radar', data: [{ value: [9, 6, 3, 5, 4], name: '地块PLOT-088' }] }],
   tooltip: { trigger: 'item', backgroundColor: 'rgba(0,0,0,0.7)', borderColor: '#333', textStyle: { color: '#fff' } },
 });
-
 
 const lineChartOptions = ref({
   grid: { top: 30, right: 20, bottom: 30, left: 40 },
@@ -123,89 +141,16 @@ const lineChartOptions = ref({
     splitLine: { lineStyle: { type: 'dashed', color: '#444' } },
   },
   tooltip: { trigger: 'axis', backgroundColor: 'rgba(0,0,0,0.7)', borderColor: '#333', textStyle: { color: '#fff' } },
-  series: [
-    {
-      name: '高风险耕地占比',
-      type: 'line',
-      smooth: true,
-      data: [2.5, 2.8, 3.1, 3.5],
-      itemStyle: { color: '#ff4d4f' },
-    },
-  ],
+  series: [{ name: '高风险耕地占比', type: 'line', smooth: true, data: [2.5, 2.8, 3.1, 3.5], itemStyle: { color: '#ff4d4f' } }],
 });
 </script>
 
 <style scoped lang="scss">
-.page-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.page-title {
-  color: #fff;
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  flex-shrink: 0;
-}
-
-.analysis-container {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.top-row {
-  flex-grow: 1;
-  margin-bottom: 20px;
-  min-height: 0;
-  & > .el-col {
-    height: 100%;
-  }
-}
-
-.bottom-row {
-  flex-shrink: 0;
-  height: 280px;
-}
-
-.top-row .el-col, .top-row .data-panel, .bottom-row .el-col, .bottom-row .data-panel {
-  height: 100%;
-}
-:deep(.data-panel .content) {
-  height: calc(100% - 40px);
-  padding: 10px;
-}
-
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  height: 100%;
-
-  .data-panel {
-    flex: 1;
-    height: auto;
-    min-height: 0;
-  }
-}
-
-.placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #999;
-  border: 1px dashed #555;
-  border-radius: 4px;
-  background-color: #000;
-}
-
-:deep(.data-panel .content .echarts-wrapper) {
-  width: 100%;
-  height: 100%;
+@use '@/styles/analysis-layout.scss';
+.text-content {
+  padding: 10px 15px;
+  color: #a0a6b8;
+  font-size: 14px;
+  line-height: 1.6;
 }
 </style> 

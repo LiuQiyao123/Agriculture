@@ -1,0 +1,81 @@
+@use '@/styles/theme.scss' as theme;
+
+.page-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.page-title {
+  color: theme.$title-color;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.filter-bar {
+  background: rgba(10, 29, 61, 0.85);
+  border: 1px solid rgba(0,170,255,.3);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  padding: 10px;
+  flex-shrink: 0;
+  :deep(.el-form-item) {
+    margin-bottom: 0;
+  }
+}
+
+.analysis-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.main-content-grid {
+  flex-grow: 1;
+  min-height: 0;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 14fr 10fr; /* ~60/40 split */
+  grid-template-rows: 1fr auto; 
+  grid-template-areas:
+    "map ai"
+    "table table";
+}
+
+.grid-map { 
+  grid-area: map;
+  min-height: 0;
+}
+.grid-ai-panels {
+  grid-area: ai;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "transparency suggestion"
+    "validation validation";
+  gap: 20px;
+  min-height: 0;
+}
+.ai-panel-transparency { grid-area: transparency; }
+.ai-panel-suggestion { grid-area: suggestion; }
+.ai-panel-validation { grid-area: validation; min-height: 0; }
+
+.grid-table {
+  grid-area: table;
+  height: 280px; 
+}
+
+:deep(.data-panel) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+:deep(.data-panel .panel-content) {
+  flex-grow: 1;
+  min-height: 0;
+}

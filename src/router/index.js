@@ -16,8 +16,15 @@ const routes = [
       {
         path: 'data-center',
         name: 'DataCenter',
-        component: () => import('@/views/DataCenter.vue'),
-        meta: { title: '数据资源中心' }
+        component: () => import('@/components/RouterOutlet.vue'),
+        redirect: '/data-center/devices',
+        meta: { title: '数据资源中心' },
+        children: [
+          { path: 'devices', name: 'DeviceLedger', component: () => import('@/views/DataCenter.vue'), meta: { title: '设备管理' } },
+          { path: 'ingestion', name: 'DataIngestion', component: () => import('@/views/dataCenter/Ingestion.vue'), meta: { title: '数据入湖' } },
+          { path: 'knowledge', name: 'KnowledgeCenter', component: () => import('@/views/dataCenter/Knowledge.vue'), meta: { title: '知识库' } },
+          { path: 'manual-report', name: 'ManualReport', component: () => import('@/views/dataCenter/ManualReport.vue'), meta: { title: '人工上报' } },
+        ]
       },
       {
         path: 'farmer-management', // Using a new path
