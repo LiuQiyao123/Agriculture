@@ -44,14 +44,16 @@
              </div>
           </DataPanel>
           <DataPanel title="数据分析验证" class="ai-panel-validation">
-             <el-tabs>
-                <el-tab-pane label="地块历史长势">
-                  <EchartsWrapper :options="lineChartOptions" />
-                </el-tab-pane>
-                <el-tab-pane label="各地块对比">
-                  <EchartsWrapper :options="barChartOptions" />
-                </el-tab-pane>
-              </el-tabs>
+             <div class="panel-content">
+               <el-tabs v-model="activeTabName" @tab-change="handleTabChange">
+                 <el-tab-pane label="地块历史长势" name="history">
+                   <EchartsWrapper ref="lineChartWrapperRef" :options="lineChartOptions" />
+                 </el-tab-pane>
+                 <el-tab-pane label="各地块对比" name="comparison">
+                   <EchartsWrapper ref="barChartWrapperRef" :options="barChartOptions" />
+                 </el-tab-pane>
+               </el-tabs>
+             </div>
           </DataPanel>
         </div>
 
@@ -87,6 +89,10 @@ import EchartsWrapper from '@/components/EchartsWrapper.vue';
 import GisMap from '@/components/GisMap.vue';
 
 const tableRef = ref(null);
+const lineChartWrapperRef = ref(null);
+const barChartWrapperRef = ref(null);
+const activeTabName = ref('history');
+
 const filters = ref({
   cropType: '',
   status: '',
@@ -112,8 +118,22 @@ onMounted(() => {
     if (tableRef.value && filteredTableData.value.length > 0) {
       tableRef.value.setCurrentRow(filteredTableData.value[0]);
     }
+    if (lineChartWrapperRef.value) {
+      lineChartWrapperRef.value.initChart();
+    }
   });
 });
+
+const handleTabChange = (name) => {
+  nextTick(() => {
+    if (name === 'history' && lineChartWrapperRef.value) {
+      lineChartWrapperRef.value.resizeChart();
+    } else if (name === 'comparison' && barChartWrapperRef.value) {
+      barChartWrapperRef.value.initChart();
+      barChartWrapperRef.value.resizeChart();
+    }
+  });
+};
 
 const lineChartOptions = ref({
   grid: { top: 30, right: 20, bottom: 30, left: 40 },
@@ -196,5 +216,26 @@ const barChartOptions = ref({
   ol {
     padding-left: 20px;
   }
+}
+
+:deep(.ai-panel-validation .panel-content) {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.el-tabs) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex-grow: 1;
+}
+
+:deep(.el-tabs__content) {
+  flex-grow: 1;
+}
+
+:deep(.el-tab-pane) {
+  height: 100%;
 }
 </style> 

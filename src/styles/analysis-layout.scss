@@ -63,7 +63,7 @@
 }
 .ai-panel-transparency { grid-area: transparency; }
 .ai-panel-suggestion { grid-area: suggestion; }
-.ai-panel-validation { grid-area: validation; min-height: 0; }
+.ai-panel-validation { grid-area: validation; min-height: 300px; }
 
 .grid-table {
   grid-area: table;

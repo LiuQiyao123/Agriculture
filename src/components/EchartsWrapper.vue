@@ -77,6 +77,11 @@ watch(() => props.options, async (newOptions) => {
     debouncedResize();
   }
 }, { deep: true });
+
+defineExpose({
+  resizeChart: safeResize,
+  initChart
+});
 </script>
 
 <style scoped>
