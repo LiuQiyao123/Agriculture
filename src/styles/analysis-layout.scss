@@ -60,6 +60,9 @@
     "validation validation";
   gap: 20px;
   min-height: 0;
+  .ai-panel-validation {
+    grid-column: 1 / -1; // Span across both columns
+  }
 }
 .ai-panel-transparency { grid-area: transparency; }
 .ai-panel-suggestion { grid-area: suggestion; }

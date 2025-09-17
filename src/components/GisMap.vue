@@ -95,13 +95,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { shallowRef, ref, onMounted, onUnmounted, watch, nextTick, createApp, computed } from 'vue';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import * as pmtiles from 'pmtiles';
+import { baseLayerConfig } from "@/gis/layers.js";
+import { getDeviceIcon, deviceCategories } from '@/gis/device-icons';
+import MapPopup from './map/MapPopup.vue';
 import devices from '../mock/devices.json';
 import irrigationSystem from '../mock/irrigation-system.json';
 import DeviceDetailPanel from './DeviceDetailPanel.vue';
 // import { generateChlorophyllGrid, chlorophyllColorScale } from '../mock/gis.js'; // Heatmap feature disabled for now
+
+// Initialize PMTiles protocol
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol("pmtiles", protocol.tile);
 
 const props = defineProps({
   geojson: Object,
@@ -126,6 +134,10 @@ const props = defineProps({
   defaultActiveLayers: {
     type: Array,
     default: () => []
+  },
+  geojson: {
+    type: Object,
+    default: null,
   }
 });
 
@@ -134,8 +146,10 @@ const emit = defineEmits(['marker-click', 'plot-analysis']);
 // 设备详情面板状态
 const deviceDetailVisible = ref(false);
 const selectedDevice = ref(null);
-const mapContainer = ref(null);
-let map = null;
+const mapContainer = shallowRef(null);
+const map = shallowRef(null);
+let activePopup = null;
+let popupComponent = null;
 
 // 山东省包围盒（大致）
 const SHANDONG_BOUNDS = [[115.5, 34.5], [122.5, 38.7]];
@@ -330,7 +344,7 @@ const getSliderPosition = () => {
 const updateLayerDataByDate = (date) => {
   // 根据选择的日期更新当前激活的图层数据
   const activeTimeLayer = activeLayers.value.find(layer => timeAxisLayers.includes(layer) && layer !== 'irrigation-system');
-  if (activeTimeLayer && map) {
+  if (activeTimeLayer && map.value) {
     // 这里可以根据日期更新图层的数据源
     console.log(`更新图层 ${activeTimeLayer} 的数据到日期: ${date.toLocaleDateString()}`);
     
@@ -340,7 +354,7 @@ const updateLayerDataByDate = (date) => {
 };
 
 const updatePlotColors = (layerKey, date) => {
-  if (!map || !props.geojson) return;
+  if (!map.value || !props.geojson) return;
   
   const colors = layerColors[layerKey];
   if (!colors) return;
@@ -413,8 +427,8 @@ const updatePlotColors = (layerKey, date) => {
   };
   
   // 更新地图数据
-  if (map.getSource('plots')) {
-    map.getSource('plots').setData(updatedData);
+  if (map.value.getSource('plots')) {
+    map.value.getSource('plots').setData(updatedData);
   }
 };
 
@@ -460,7 +474,8 @@ const initializeMap = () => {
   }
   
   const style = `https://api.maptiler.com/maps/0198e427-ec93-788c-a9fd-1f109fdac61f/style.json?key=${apiKey}`;
-  map = new maplibregl.Map({
+
+  map.value = new maplibregl.Map({
     container: mapContainer.value,
     style: style,
     center: [118.5, 36.5], // Center of Shandong Province
@@ -475,43 +490,19 @@ const initializeMap = () => {
     dataCenterUsage: false, // 禁用数据中心
   });
 
-  map.on('load', () => {
-    /*
-    // Add the simulated chlorophyll heatmap
-    const bbox = [114.6, 34.4, 122.7, 38.4]; // Bounding box for Shandong Province
-    const chlorophyllData = generateChlorophyllGrid(bbox, 0.01); // Increased cell size for performance
-
-    map.addSource('chlorophyll-heatmap', {
-      type: 'geojson',
-      data: chlorophyllData
-    });
-
-    map.addLayer({
-      id: 'chlorophyll-heatmap-layer',
-      type: 'fill',
-      source: 'chlorophyll-heatmap',
-      paint: {
-        'fill-color': [
-          'interpolate',
-          ['linear'],
-          ['get', 'chlorophyll'],
-          ...chlorophyllColorScale
-        ],
-        'fill-opacity': 0.7,
-        'fill-outline-color': 'transparent'
-      }
-    });
-    */
+  map.value.on('load', () => {
+    // The base map style now contains all necessary layers.
+    // We only need to add our application-specific sources and layers here.
     
     // Add NDVI Tile Layer Source and Layer Definition
-    map.addSource('ndvi-source', {
+    map.value.addSource('ndvi-source', {
       type: 'raster',
       tiles: ['/tiles/ndvi/{z}/{x}/{y}.png'], // Assumes tiles are in /public/tiles/
       tileSize: 256,
       attribution: 'NDVI data source'
     });
 
-    map.addLayer({
+    map.value.addLayer({
       id: 'ndvi-tiles',
       type: 'raster',
       source: 'ndvi-source',
@@ -534,7 +525,7 @@ const clearMarkers = () => {
 };
 
 const addMarkers = () => {
-  if (!props.showSensors || !map) return; // Strengthened guard clause
+  if (!props.showSensors || !map.value) return; // Strengthened guard clause
   const dataSource = Array.isArray(props.markers) && props.markers.length ? props.markers : devices;
   if (!dataSource) return;
   const bounds = new maplibregl.LngLatBounds();
@@ -587,7 +578,7 @@ const addMarkers = () => {
 
     const marker = new maplibregl.Marker({ element: wrap })
       .setLngLat(markerInfo.coordinates)
-      .addTo(map);
+      .addTo(map.value);
       
     marker.getElement().addEventListener('click', (e) => {
       e.stopPropagation();
@@ -626,9 +617,9 @@ const addMarkers = () => {
   // 自适应视野
   try {
     if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, { padding: 40, duration: 0 });
+      map.value.fitBounds(bounds, { padding: 40, duration: 0 });
     } else {
-      map.fitBounds(SHANDONG_BOUNDS, { padding: 40, duration: 0 });
+      map.value.fitBounds(SHANDONG_BOUNDS, { padding: 40, duration: 0 });
     }
   } catch {}
 };
@@ -665,20 +656,20 @@ const deviceTypes = [
 ];
 
 const updateMapData = () => {
-  if (!map) return;
+  if (!map.value) return;
   // polygons
   if (props.geojson) {
-    if (map.getSource('plots')) {
-      map.getSource('plots').setData(props.geojson);
+    if (map.value.getSource('plots')) {
+      map.value.getSource('plots').setData(props.geojson);
     } else {
-      map.addSource('plots', { 
+      map.value.addSource('plots', { 
         type: 'geojson', 
         data: props.geojson,
         promoteId: 'id' // Use feature property 'id' as feature id
       });
       
       // Add a layer for the plot fills
-      map.addLayer({
+      map.value.addLayer({
         id: 'plots-fill',
         type: 'fill',
         source: 'plots',
@@ -704,7 +695,7 @@ const updateMapData = () => {
       });
       
       // Add a layer for the plot outlines
-      map.addLayer({
+      map.value.addLayer({
         id: 'plots-outline',
         type: 'line',
         source: 'plots',
@@ -721,63 +712,63 @@ const updateMapData = () => {
       });
 
       // Click event to show popup
-      map.on('click', 'plots-fill', (e) => {
+      map.value.on('click', 'plots-fill', (e) => {
         if (e.features.length > 0) {
           const feature = e.features[0];
-          showPlotPopup(feature, e.lngLat);
+          showPlotPopup(feature.properties, e.lngLat);
         }
       });
 
       // Hover effect
       let hoveredPlotId = null;
-      map.on('mousemove', 'plots-fill', (e) => {
+      map.value.on('mousemove', 'plots-fill', (e) => {
         if (e.features.length > 0) {
           if (hoveredPlotId !== null) {
-            map.setFeatureState(
+            map.value.setFeatureState(
               { source: 'plots', id: hoveredPlotId },
               { hover: false }
             );
           }
           hoveredPlotId = e.features[0].properties.id;
-          map.setFeatureState(
+          map.value.setFeatureState(
             { source: 'plots', id: hoveredPlotId },
             { hover: true }
           );
-          map.getCanvas().style.cursor = 'pointer';
+          map.value.getCanvas().style.cursor = 'pointer';
         }
       });
 
-      map.on('mouseleave', 'plots-fill', () => {
+      map.value.on('mouseleave', 'plots-fill', () => {
         if (hoveredPlotId !== null) {
-          map.setFeatureState(
+          map.value.setFeatureState(
             { source: 'plots', id: hoveredPlotId },
             { hover: false }
           );
         }
         hoveredPlotId = null;
-        map.getCanvas().style.cursor = '';
+        map.value.getCanvas().style.cursor = '';
       });
     }
   }
   // dynamic layers
   if (props.layers) {
     for (const key in props.layers) {
-      if (!map.getSource(key)) {
+      if (!map.value.getSource(key)) {
         const layer = props.layers[key];
-        map.addSource(key, { type: 'geojson', data: layer.data });
-        map.addLayer({ id: key, type: 'fill', source: key, paint: layer.paint, layout: { visibility: 'none' } });
+        map.value.addSource(key, { type: 'geojson', data: layer.data });
+        map.value.addLayer({ id: key, type: 'fill', source: key, paint: layer.paint, layout: { visibility: 'none' } });
       }
     }
   }
   
   // 添加灌溉系统图层
-  if (!map.getSource('irrigation-system')) {
-    map.addSource('irrigation-system', { 
+  if (!map.value.getSource('irrigation-system')) {
+    map.value.addSource('irrigation-system', { 
       type: 'geojson', 
       data: irrigationSystem
     });
     
-    map.addLayer({
+    map.value.addLayer({
       id: 'irrigation-lines',
       type: 'line',
       source: 'irrigation-system',
@@ -808,7 +799,7 @@ const updateMapData = () => {
     });
     
     // 添加河流阴影效果
-    map.addLayer({
+    map.value.addLayer({
       id: 'irrigation-lines-shadow',
       type: 'line',
       source: 'irrigation-system',
@@ -843,25 +834,25 @@ const setLayerVisibility = (layerKey, visible) => {
   switch (config.type) {
     case 'geojson':
       if (layerKey === 'plots') {
-        if (map.getLayer('plots-fill')) map.setLayoutProperty('plots-fill', 'visibility', visible ? 'visible' : 'none');
-        if (map.getLayer('plots-outline')) map.setLayoutProperty('plots-outline', 'visibility', visible ? 'visible' : 'none');
+        if (map.value.getLayer('plots-fill')) map.value.setLayoutProperty('plots-fill', 'visibility', visible ? 'visible' : 'none');
+        if (map.value.getLayer('plots-outline')) map.value.setLayoutProperty('plots-outline', 'visibility', visible ? 'visible' : 'none');
       } else if (layerKey === 'irrigation-system') {
-        if (map.getLayer('irrigation-lines')) map.setLayoutProperty('irrigation-lines', 'visibility', visible ? 'visible' : 'none');
-        if (map.getLayer('irrigation-lines-shadow')) map.setLayoutProperty('irrigation-lines-shadow', 'visibility', visible ? 'visible' : 'none');
+        if (map.value.getLayer('irrigation-lines')) map.value.setLayoutProperty('irrigation-lines', 'visibility', visible ? 'visible' : 'none');
+        if (map.value.getLayer('irrigation-lines-shadow')) map.value.setLayoutProperty('irrigation-lines-shadow', 'visibility', visible ? 'visible' : 'none');
       }
       break;
     case 'marker':
       visible ? addMarkers() : clearMarkers();
       break;
     case 'raster':
-      if (map.getLayer(config.id)) map.setLayoutProperty(config.id, 'visibility', visible ? 'visible' : 'none');
+      if (map.value.getLayer(config.id)) map.value.setLayoutProperty(config.id, 'visibility', visible ? 'visible' : 'none');
       break;
     // Add other layer types here
   }
 };
 
 const toggleLayer = (layerKey) => {
-  if (!map) return;
+  if (!map.value) return;
   const config = allLayersConfig[layerKey];
   if (!config) return;
   
@@ -906,7 +897,7 @@ const toggleLayer = (layerKey) => {
 };
 
 const resetPlotColors = () => {
-  if (!map || !props.geojson) return;
+  if (!map.value || !props.geojson) return;
   
   const resetData = {
     ...props.geojson,
@@ -919,7 +910,7 @@ const resetPlotColors = () => {
     }))
   };
   
-  map.getSource('plots').setData(resetData);
+  map.value.getSource('plots').setData(resetData);
 };
 
 // This function is no longer needed as toggleLayer handles markers
@@ -929,59 +920,79 @@ const resetPlotColors = () => {
 //   if (sensorLayerVisible.value) addMarkers();
 // };
 
-const showPlotPopup = (feature, lngLat) => {
-  const props = feature.properties;
-  
-  const getSoilQuality = (score) => {
-    if (score > 90) return { text: '优', color: '#52c41a' };
-    if (score > 70) return { text: '良', color: '#1890ff' };
-    if (score > 50) return { text: '中', color: '#faad14' };
-    return { text: '差', color: '#f5222d' };
-  };
-  const soilQuality = getSoilQuality(props.soilScore);
-
-  const popupContent = `
-    <div class="plot-popup-content">
-      <div class="popup-header"><h3>${props.name}</h3></div>
-      <div class="popup-body">
-        <div class="info-row"><span>作物类型</span><span>${props.crop}</span></div>
-        <div class="info-row"><span>面积</span><span>${props.areaMu} 亩</span></div>
-        <div class="info-row">
-          <span>地力指数</span>
-          <div class="progress-bar-container">
-            <div class="progress-bar" style="width: ${props.soilScore}%; background-color: ${soilQuality.color};"></div>
-            <span class="progress-label">${props.soilScore} (${soilQuality.text})</span>
-          </div>
-        </div>
-        <div class="info-row"><span>实时墒情</span><span class="moisture-value">${props.soilMoisture}%</span></div>
-        <div class="info-row"><span>NDVI值</span><span class="ndvi-value">${props.ndvi}</span></div>
-        <div class="info-row"><span>负责人</span><span>${props.owner}</span></div>
-        <div class="info-row"><span>联系电话</span><span><a href="tel:${props.phone}">${props.phone}</a></span></div>
-      </div>
-      <div class="popup-footer">
-        <button id="analysis-btn" class="analysis-btn">进入分析</button>
-      </div>
-    </div>
-  `;
-
-  const popup = new maplibregl.Popup({ 
-      offset: 15, 
-      className: 'plot-popup',
-      closeButton: false
-    })
-    .setLngLat(lngLat)
-    .setHTML(popupContent)
-    .addTo(map);
-
-  // Add click listener to the button after popup is created
-  document.getElementById('analysis-btn').addEventListener('click', () => {
-    emit('plot-analysis', feature);
-    popup.remove();
+const handleMapClick = (e) => {
+  const features = map.value.queryRenderedFeatures(e.point, {
+    layers: ['地块', ...deviceCategories.map(c => c.id)]
   });
+
+  if (activePopup) {
+    activePopup.remove();
+    activePopup = null;
+  }
+
+  if (features.length > 0) {
+    const feature = features[0];
+    const lngLat = e.lngLat;
+
+    if (feature.layer.id === '地块') {
+      showPlotPopup(feature.properties, lngLat);
+    } else if (deviceCategories.some(c => c.id === feature.layer.id)) {
+      showDevicePopup(feature.properties, lngLat);
+    }
+  }
+};
+
+const createPopupComponent = (propsData) => {
+  const popupApp = createApp(MapPopup, {
+    ...propsData,
+    onClose: () => {
+      if (activePopup) {
+        activePopup.remove();
+        activePopup = null;
+      }
+    }
+  });
+
+  const container = document.createElement('div');
+  popupComponent = popupApp.mount(container);
+  
+  return container;
+};
+
+const showPlotPopup = (properties, lngLat) => {
+  const popupContainer = createPopupComponent({ title: properties.name || '地块详情' });
+  const content = document.createElement('ul');
+  content.innerHTML = `
+    <li><span class="label">面积:</span><span class="value">${properties.areaMu || 'N/A'} 亩</span></li>
+    <li><span class="label">作物:</span><span class="value">${properties.crop || '未种植'}</span></li>
+    <li><span class="label">ID:</span><span class="value">${properties.id || 'N/A'}</span></li>
+  `;
+  popupContainer.querySelector('.popup-content').appendChild(content);
+
+  activePopup = new maplibregl.Popup({ closeButton: false, maxWidth: 'none' })
+    .setLngLat(lngLat)
+    .setDOMContent(popupContainer)
+    .addTo(map.value);
+};
+
+const showDevicePopup = (properties, lngLat) => {
+  const popupContainer = createPopupComponent({ title: properties.name || '设备详情' });
+  const content = document.createElement('ul');
+  content.innerHTML = `
+    <li><span class="label">类型:</span><span class="value">${properties.type || 'N/A'}</span></li>
+    <li><span class="label">状态:</span><span class="value">${properties.status || 'N/A'}</span></li>
+    <li><span class="label">ID:</span><span class="value">${properties.id || 'N/A'}</span></li>
+  `;
+  popupContainer.querySelector('.popup-content').appendChild(content);
+  
+  activePopup = new maplibregl.Popup({ closeButton: false, maxWidth: 'none', offset: 25 })
+    .setLngLat(lngLat)
+    .setDOMContent(popupContainer)
+    .addTo(map.value);
 };
 
 const flyTo = (options) => {
-  if (map) map.flyTo(options);
+  if (map.value) map.value.flyTo(options);
 };
 
 defineExpose({
@@ -991,10 +1002,10 @@ defineExpose({
 onMounted(initializeMap);
 
 onUnmounted(() => {
-  if (map) {
+  if (map.value) {
     clearMarkers();
-    map.remove();
-    map = null;
+    map.value.remove();
+    map.value = null;
   }
 });
 

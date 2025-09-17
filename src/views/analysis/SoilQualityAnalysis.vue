@@ -1,13 +1,13 @@
 <template>
   <AnalysisPageLayout>
-    <template #title>病虫害智能预测与防治决策</template>
+    <template #title>土壤质量分析与改良决策</template>
     
     <template #filter-bar>
       <FilterBar v-model="filters" :fields="filterFields" />
     </template>
 
     <template #map>
-      <DataPanel title="病虫害风险等级分布图">
+      <DataPanel title="土壤有机质含量分布图">
         <GisMap
           :ref="gisMapRef"
           :show-layer-control="false"
@@ -18,27 +18,28 @@
     </template>
 
     <template #ai-panels>
-      <AIPanel title="AI 精准防治方案" :content="suggestionContent" />
+      <AIPanel title="AI 土壤改良建议" :content="suggestionContent" />
     </template>
 
     <template #table>
       <AnalysisDataTable
         :ref="tableRef"
-        title="病虫害预测详情列表"
+        title="土壤质量指标详情"
         :data="filteredTableData"
         @current-change="handleCurrentChange"
       >
         <el-table-column prop="region" label="区域" />
-        <el-table-column prop="pestType" label="主要害虫" />
-        <el-table-column prop="riskLevel" label="风险等级">
+        <el-table-column prop="level" label="肥力等级">
             <template #default="{ row }">
-            <el-tag :type="row.riskLevel === '高' ? 'danger' : row.riskLevel === '中' ? 'warning' : 'success'">
-              {{ row.riskLevel }}
+            <el-tag :type="row.level === '贫瘠' ? 'danger' : row.level === '较差' ? 'warning' : 'success'">
+              {{ row.level }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="prediction" label="AI预测" />
-        <el-table-column prop="area" label="影响面积" />
+        <el-table-column prop="organicMatter" label="有机质" />
+        <el-table-column prop="nitrogen" label="速效氮(mg/kg)" />
+        <el-table-column prop="phosphorus" label="速效磷(mg/kg)" />
+        <el-table-column prop="potassium" label="速效钾(mg/kg)" />
       </AnalysisDataTable>
     </template>
   </AnalysisPageLayout>
@@ -52,7 +53,7 @@ import AIPanel from '@/components/AIPanel.vue';
 import AnalysisPageLayout from '@/components/layouts/AnalysisPageLayout.vue';
 import FilterBar from '@/components/forms/FilterBar.vue';
 import AnalysisDataTable from '@/components/tables/AnalysisDataTable.vue';
-import { usePestPredictionData } from '@/composables/usePestPredictionData.js';
+import { useSoilQualityData } from '@/composables/useSoilQualityData.js';
 
 const gisMapRef = ref(null);
 const tableRef = ref(null);
@@ -64,9 +65,9 @@ const {
   filteredTableData,
   handleCurrentChange,
   suggestionContent,
-} = usePestPredictionData(gisMapRef, tableRef);
+} = useSoilQualityData(gisMapRef, tableRef);
 </script>
 
 <style scoped lang="scss">
 /* Layout is handled by AnalysisPageLayout.vue */
-</style> 
+</style>
