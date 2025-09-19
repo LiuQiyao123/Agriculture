@@ -1,126 +1,200 @@
 <template>
-  <div class="page-container">
-    <h1 class="page-title">耕地退化分析</h1>
-    <div class="filter-bar">
-      <el-form :inline="true" :model="filters" @submit.prevent>
-        <el-form-item label="退化类型">
-          <el-select v-model="filters.type" placeholder="请选择类型" clearable>
-            <el-option label="土壤酸化" value="土壤酸化" />
-            <el-option label="土壤盐碱化" value="土壤盐碱化" />
-            <el-option label="养分流失" value="养分流失" />
-            <el-option label="土壤板结" value="土壤板结" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="退化等级">
-          <el-select v-model="filters.level" placeholder="请选择等级" clearable>
-            <el-option label="重度" value="重度" />
-            <el-option label="中度" value="中度" />
-            <el-option label="轻度" value="轻度" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-    </div>
-    <div class="content-wrapper">
-      <div class="main-content">
-        <DataPanel title="耕地退化空间分布" class="map-panel">
-          <GisMap :show-layer-control="false" :show-sensors="false" />
-        </DataPanel>
-        <div class="ai-panels-container">
-          <DataPanel title="退化类型占比">
-            <EchartsWrapper :options="pieChartOptions" />
-          </DataPanel>
-          <AIPanel title="AI 退化分析与修复建议" :content="aiAnalysisContent" />
+  <AnalysisPageLayout>
+    <template #title>地力退化分析</template>
+
+    <template #filter-bar>
+      <FilterBar v-model="filters" :fields="filterFields" />
+    </template>
+
+    <template #map>
+      <DataPanel title="地力退化程度分布图">
+        <BaseMap
+          ref="baseMapRef"
+          :layers="mapLayers"
+        />
+        <div class="map-controls">
+          <LayerControl 
+            :layers="analysisLayers"
+            :initialActiveLayers="initialActiveLayers"
+            @layer-visibility-changed="handleLayerVisibilityChange"
+          />
         </div>
-      </div>
-      <DataPanel title="耕地退化风险地块列表" class="table-panel">
-        <el-table 
-          :ref="tableRef"
-          :data="filteredTableData" 
-          style="width: 100%" 
-          height="100%" 
-          class="dark-table"
-          highlight-current-row
-        >
-          <el-table-column prop="plotId" label="地块编号" />
-          <el-table-column prop="type" label="退化类型" />
-          <el-table-column prop="level" label="退化等级">
-            <template #default="{ row }">
-              <el-tag :type="row.level === '重度' ? 'danger' : row.level === '中度' ? 'warning' : 'info'">{{ row.level }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="area" label="面积(亩)" />
-          <el-table-column prop="suggestion" label="修复建议" />
-        </el-table>
       </DataPanel>
-    </div>
-  </div>
+    </template>
+    
+    <template #ai-panels>
+      <DataPanel title="AI智能分析">
+        <AIPanel :content="aiAnalysisContent" />
+      </DataPanel>
+      <DataPanel title="地力退化程度分布图">
+        <EchartsWrapper :options="pieChartOptions" height="300px" />
+      </DataPanel>
+    </template>
+
+    <template #table>
+      <AnalysisDataTable
+        ref="tableRef"
+        title="地力退化详情列表"
+        :data="filteredTableData"
+        @current-change="handleCurrentChange"
+      >
+        <el-table-column prop="plot" label="地块" />
+        <el-table-column prop="crop" label="主要作物" />
+        <el-table-column prop="degradationLevel" label="退化等级">
+           <template #default="{ row }">
+            <el-tag :type="row.degradationLevel === '严重' ? 'danger' : row.degradationLevel === '中度' ? 'warning' : 'info'">
+              {{ row.degradationLevel }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="organicMatter" label="有机质含量(g/kg)" />
+        <el-table-column prop="ph" label="土壤pH值" />
+        <el-table-column prop="salinity" label="盐分含量(g/L)" />
+        <el-table-column prop="mainReason" label="主要退化原因" />
+      </AnalysisDataTable>
+    </template>
+  </AnalysisPageLayout>
 </template>
 
 <script setup>
+import { ref, computed } from 'vue';
 import DataPanel from '@/components/DataPanel.vue';
-import EchartsWrapper from '@/components/EchartsWrapper.vue';
-import GisMap from '@/components/GisMap.vue';
+import BaseMap from '@/components/map/BaseMap.vue';
+import LayerControl from '@/components/map/controls/LayerControl.vue';
+import AnalysisPageLayout from '@/components/layouts/AnalysisPageLayout.vue';
+import FilterBar from '@/components/forms/FilterBar.vue';
+import AnalysisDataTable from '@/components/tables/AnalysisDataTable.vue';
 import AIPanel from '@/components/AIPanel.vue';
+import EchartsWrapper from '@/components/EchartsWrapper.vue';
 import { useLandDegradationData } from '@/composables/useLandDegradationData.js';
 
+const baseMapRef = ref(null);
+const tableRef = ref(null);
+
+// --- Map State Management ---
+const analysisLayers = ref([
+  { id: 'plots', name: '地块边界', exclusive: false, defaultVisibility: true },
+  { id: 'degradation-level', name: '地力退化等级', exclusive: true, defaultVisibility: true },
+]);
+const initialActiveLayers = ['plots', 'degradation-level'];
+const layerVisibilities = ref({
+  'plots': true,
+  'degradation-level': true,
+});
+
+const handleLayerVisibilityChange = ({ layerId, visible }) => {
+  layerVisibilities.value[layerId] = visible;
+};
+
 const {
-  tableRef,
+  processedPlots,
   filters,
+  filterFields,
   filteredTableData,
-  pieChartOptions,
-  aiAnalysisContent,
-} = useLandDegradationData();
+  handleCurrentChange,
+  aiAnalysisContent
+} = useLandDegradationData(baseMapRef, tableRef);
+
+
+const mapLayers = computed(() => {
+  const finalLayers = {};
+  
+  if (layerVisibilities.value['plots']) {
+    finalLayers['plots'] = {
+      data: processedPlots.value,
+      type: 'fill',
+      paint: { 'fill-color': '#cccccc', 'fill-opacity': 0.1 }
+    };
+     finalLayers['plots-outline'] = {
+      data: processedPlots.value,
+      type: 'line',
+      paint: { 'line-color': '#ffffff', 'line-width': 1 }
+    };
+  }
+  
+  if (layerVisibilities.value['degradation-level']) {
+    finalLayers['degradation-fill'] = {
+       data: processedPlots.value,
+       type: 'fill',
+       paint: {
+        'fill-color': [
+          'match',
+          ['get', 'degradationLevel'],
+          '严重', '#F56C6C',
+          '中度', '#E6A23C',
+          '轻微', '#409EFF',
+          '#cccccc'
+        ],
+        'fill-opacity': 0.7
+       }
+    };
+  }
+  
+  return finalLayers;
+});
+
+const tableColumns = [
+  { prop: 'plot', label: '地块' },
+  { prop: 'crop', label: '主要作物' },
+  { prop: 'degradationLevel', label: '退化等级' },
+  { prop: 'organicMatter', label: '有机质含量(g/kg)' },
+  { prop: 'ph', label: '土壤pH值' },
+  { prop: 'salinity', label: '盐分含量(g/L)' },
+  { prop: 'mainReason', label: '主要原因' },
+];
+
+const pieChartOptions = computed(() => {
+  const stats = filteredTableData.value.reduce((acc, item) => {
+    if (!acc[item.degradationLevel]) {
+      acc[item.degradationLevel] = 0;
+    }
+    acc[item.degradationLevel]++;
+    return acc;
+  }, {});
+
+  return {
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      borderColor: '#333',
+      textStyle: { color: '#fff' }
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left',
+      top: 'center',
+      textStyle: {
+        color: '#ccc'
+      }
+    },
+    series: [
+      {
+        name: '退化等级',
+        type: 'pie',
+        radius: '70%',
+        center: ['65%', '50%'],
+        data: Object.keys(stats).map(key => ({ value: stats[key], name: key })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        }
+      }
+    ],
+    color: ['#F56C6C', '#E6A23C', '#67C23A', '#409EFF'] // Severe, Moderate, Slight
+  };
+});
+
 </script>
 
 <style scoped lang="scss">
-.page-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.page-title {
-  color: #a0a6b8;
-  font-size: 18px;
-  margin-bottom: 16px;
-  flex-shrink: 0;
-}
-
-.filter-bar {
-  flex-shrink: 0;
-  margin-bottom: 16px;
-}
-
-.content-wrapper {
-  flex-grow: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.main-content {
-  flex-grow: 1;
-  min-height: 0;
-  display: flex;
-  gap: 16px;
-}
-
-.map-panel {
-  flex: 3;
-  min-width: 0;
-}
-
-.ai-panels-container {
-  flex: 2;
-  min-width: 0;
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 16px;
-}
-
-.table-panel {
-  flex-shrink: 0;
-  height: 220px;
+.map-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
 }
 </style> 

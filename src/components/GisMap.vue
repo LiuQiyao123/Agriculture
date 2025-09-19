@@ -4,6 +4,11 @@
     <!-- Map radial mask overlay -->
     <div v-if="showMask" class="map-mask" aria-hidden="true"></div>
 
+    <!-- Custom Popup Slot -->
+    <div ref="popupContainer" style="display: none;">
+      <slot name="popup" :feature="selectedFeatureForPopup"></slot>
+    </div>
+
     <!-- View Switcher -->
     <div v-if="showViewSwitcher" class="view-switcher">
       <button 
@@ -114,7 +119,8 @@ maplibregl.addProtocol("pmtiles", protocol.tile);
 const props = defineProps({
   geojson: Object,
   markers: Array,
-  layers: Object,
+  baseLayers: Object, // New prop for base layers
+  dynamicLayers: Object, // Renamed from 'layers' for clarity
   showLayerControl: {
     type: Boolean,
     default: true
@@ -135,13 +141,19 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  geojson: {
-    type: Object,
-    default: null,
+  context: {
+    type: String,
+    default: 'analysis' // 'analysis' or 'task-management'
   }
 });
 
-const emit = defineEmits(['marker-click', 'plot-analysis']);
+const emit = defineEmits(['marker-click', 'plot-analysis', 'plot-clicked']);
+
+// Popup related state
+const selectedFeatureForPopup = ref(null);
+const popupContainer = ref(null);
+let activePopupInstance = null;
+
 
 // 设备详情面板状态
 const deviceDetailVisible = ref(false);
@@ -186,7 +198,11 @@ const activeLayers = ref([
   ...(props.showSensors ? ['sensor-devices'] : []),
   ...((props.defaultActiveLayers || []).filter(l => l !== 'sensor-devices'))
 ]);
-const currentViewLayers = computed(() => views[currentView.value]);
+
+const currentViewLayers = computed(() => {
+  if (!props.showViewSwitcher) return null;
+  return views[currentView.value]
+});
 
 // 时间轴相关状态
 const timeSliderVisible = ref(false);
@@ -198,7 +214,7 @@ const timeAxisLayers = ['ndvi-tiles', 'soil-moisture', 'pest-disease', 'weather-
 
 // 计算时间轴是否应该显示
 const shouldShowTimeSlider = computed(() => {
-  return timeSliderVisible.value && activeLayers.value.some(layer => timeAxisLayers.includes(layer));
+  return props.context === 'analysis' && timeSliderVisible.value && activeLayers.value.some(layer => timeAxisLayers.includes(layer));
 });
 
 // 生成时间轴数据（T-7到T+7）
@@ -494,25 +510,28 @@ const initializeMap = () => {
     // The base map style now contains all necessary layers.
     // We only need to add our application-specific sources and layers here.
     
-    // Add NDVI Tile Layer Source and Layer Definition
-    map.value.addSource('ndvi-source', {
-      type: 'raster',
-      tiles: ['/tiles/ndvi/{z}/{x}/{y}.png'], // Assumes tiles are in /public/tiles/
-      tileSize: 256,
-      attribution: 'NDVI data source'
-    });
+    // Add analysis-specific sources ONLY if layer control is shown
+    if (props.showLayerControl) {
+      // Add NDVI Tile Layer Source and Layer Definition
+      map.value.addSource('ndvi-source', {
+        type: 'raster',
+        tiles: ['/tiles/ndvi/{z}/{x}/{y}.png'], // Assumes tiles are in /public/tiles/
+        tileSize: 256,
+        attribution: 'NDVI data source'
+      });
 
-    map.value.addLayer({
-      id: 'ndvi-tiles',
-      type: 'raster',
-      source: 'ndvi-source',
-      paint: {
-        'raster-opacity': 0.6
-      },
-      layout: {
-        visibility: 'none' // Initially hidden
-      }
-    });
+      map.value.addLayer({
+        id: 'ndvi-tiles',
+        type: 'raster',
+        source: 'ndvi-source',
+        paint: {
+          'raster-opacity': 0.6
+        },
+        layout: {
+          visibility: 'none' // Initially hidden
+        }
+      });
+    }
 
     updateMapData();
   });
@@ -525,7 +544,7 @@ const clearMarkers = () => {
 };
 
 const addMarkers = () => {
-  if (!props.showSensors || !map.value) return; // Strengthened guard clause
+  if (!props.showSensors || !map.value || props.context !== 'analysis') return; // Do not show markers if not in analysis context
   const dataSource = Array.isArray(props.markers) && props.markers.length ? props.markers : devices;
   if (!dataSource) return;
   const bounds = new maplibregl.LngLatBounds();
@@ -657,7 +676,10 @@ const deviceTypes = [
 
 const updateMapData = () => {
   if (!map.value) return;
-  // polygons
+
+  const layersToProcess = { ...props.baseLayers, ...props.dynamicLayers };
+
+  // polygons (from geojson prop, for backward compatibility)
   if (props.geojson) {
     if (map.value.getSource('plots')) {
       map.value.getSource('plots').setData(props.geojson);
@@ -715,7 +737,12 @@ const updateMapData = () => {
       map.value.on('click', 'plots-fill', (e) => {
         if (e.features.length > 0) {
           const feature = e.features[0];
-          showPlotPopup(feature.properties, e.lngLat);
+          // In analysis mode, show popup. In other modes, just emit event.
+          if (props.showLayerControl) { 
+            showPlotPopup(feature.properties, e.lngLat);
+          } else {
+            emit('plot-clicked', feature.properties.id);
+          }
         }
       });
 
@@ -750,81 +777,181 @@ const updateMapData = () => {
       });
     }
   }
-  // dynamic layers
-  if (props.layers) {
-    for (const key in props.layers) {
-      if (!map.value.getSource(key)) {
-        const layer = props.layers[key];
-        map.value.addSource(key, { type: 'geojson', data: layer.data });
-        map.value.addLayer({ id: key, type: 'fill', source: key, paint: layer.paint, layout: { visibility: 'none' } });
+
+  // Process all layers passed via props
+  for (const key in layersToProcess) {
+    const layer = layersToProcess[key];
+    const source = map.value.getSource(key);
+    
+    if (source) {
+      // Source exists, just update data
+      source.setData(layer.data);
+    } else {
+      // Source does not exist, create source and layer
+      if (layer && layer.data) {
+        map.value.addSource(key, { 
+          type: 'geojson', 
+          data: layer.data,
+          ...(layer.options || {})
+        });
+        map.value.addLayer({
+          id: key,
+          source: key,
+          type: layer.type || 'fill',
+          paint: layer.paint || {},
+          layout: layer.layout || {},
+        });
+
+        // Add click listener for layers that are not the base plot fill
+        if (key !== 'plots-fill' && key !== 'plots-outline') {
+           map.value.on('click', key, (e) => {
+            if (e.features.length > 0) {
+              const feature = e.features[0];
+              showCustomPopup(feature, e.lngLat);
+            }
+          });
+
+          map.value.on('mouseenter', key, () => {
+            map.value.getCanvas().style.cursor = 'pointer';
+          });
+
+          map.value.on('mouseleave', key, () => {
+            map.value.getCanvas().style.cursor = '';
+          });
+        }
       }
     }
   }
   
-  // 添加灌溉系统图层
-  if (!map.value.getSource('irrigation-system')) {
-    map.value.addSource('irrigation-system', { 
-      type: 'geojson', 
-      data: irrigationSystem
-    });
-    
-    map.value.addLayer({
-      id: 'irrigation-lines',
-      type: 'line',
-      source: 'irrigation-system',
-      paint: {
-        'line-color': [
-          'interpolate',
-          ['linear'],
-          ['get', 'capacity'],
-          15, '#87CEEB',  // 浅蓝色 - 小流量
-          25, '#4682B4',  // 钢蓝色 - 中等流量
-          30, '#1E90FF',  // 道奇蓝 - 大流量
-          50, '#0000CD'   // 深蓝色 - 最大流量
-        ],
-        'line-width': [
-          'interpolate',
-          ['linear'],
-          ['get', 'capacity'],
-          15, 2,   // 细线 - 小流量
-          25, 3,   // 中等线 - 中等流量
-          30, 4,   // 粗线 - 大流量
-          50, 5    // 最粗线 - 最大流量
-        ],
-        'line-opacity': 0.9
-      },
-      layout: {
-        visibility: 'none'
-      }
-    });
-    
-    // 添加河流阴影效果
-    map.value.addLayer({
-      id: 'irrigation-lines-shadow',
-      type: 'line',
-      source: 'irrigation-system',
-      paint: {
-        'line-color': '#000000',
-        'line-width': [
-          'interpolate',
-          ['linear'],
-          ['get', 'capacity'],
-          15, 3,   // 阴影宽度
-          25, 4,
-          30, 5,
-          50, 6
-        ],
-        'line-opacity': 0.3,
-        'line-translate': [2, 2]  // 阴影偏移
-      },
-      layout: {
-        visibility: 'none'
-      }
-    });
+  // Add analysis-specific layers ONLY if layer control is shown
+  if (props.showLayerControl) {
+    // 添加灌溉系统图层
+    if (!map.value.getSource('irrigation-system')) {
+      map.value.addSource('irrigation-system', { 
+        type: 'geojson', 
+        data: irrigationSystem
+      });
+      
+      map.value.addLayer({
+        id: 'irrigation-lines',
+        type: 'line',
+        source: 'irrigation-system',
+        paint: {
+          'line-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'capacity'],
+            15, '#87CEEB',  // 浅蓝色 - 小流量
+            25, '#4682B4',  // 钢蓝色 - 中等流量
+            30, '#1E90FF',  // 道奇蓝 - 大流量
+            50, '#0000CD'   // 深蓝色 - 最大流量
+          ],
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['get', 'capacity'],
+            15, 2,   // 细线 - 小流量
+            25, 3,   // 中等线 - 中等流量
+            30, 4,   // 粗线 - 大流量
+            50, 5    // 最粗线 - 最大流量
+          ],
+          'line-opacity': 0.9
+        },
+        layout: {
+          visibility: 'none'
+        }
+      });
+      
+      // 添加河流阴影效果
+      map.value.addLayer({
+        id: 'irrigation-lines-shadow',
+        type: 'line',
+        source: 'irrigation-system',
+        paint: {
+          'line-color': '#000000',
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['get', 'capacity'],
+            15, 3,   // 阴影宽度
+            25, 4,
+            30, 5,
+            50, 6
+          ],
+          'line-opacity': 0.3,
+          'line-translate': [2, 2]  // 阴影偏移
+        },
+        layout: {
+          visibility: 'none'
+        }
+      });
+    }
   }
-  // markers
-  clearMarkers();
-  addMarkers();
+  
+  // markers (only for analysis context)
+  if (props.showSensors) {
+    clearMarkers();
+    addMarkers();
+  }
+};
+
+const showCustomPopup = (feature, lngLat) => {
+  if (activePopupInstance) {
+    activePopupInstance.remove();
+  }
+
+  selectedFeatureForPopup.value = feature.properties;
+  
+  nextTick(() => {
+    if (popupContainer.value && popupContainer.value.innerHTML.trim()) {
+      // Clone the content instead of moving it
+      const popupNode = popupContainer.value.firstElementChild.cloneNode(true);
+      activePopupInstance = new maplibregl.Popup({ closeButton: false, maxWidth: 'none' })
+        .setLngLat(lngLat)
+        .setDOMContent(popupNode)
+        .addTo(map.value);
+    }
+  });
+};
+
+const flyTo = (options) => {
+  if (map.value) map.value.flyTo(options);
+};
+
+defineExpose({
+  flyTo,
+});
+
+const showPlotPopup = (properties, lngLat) => {
+  const popupContainer = createPopupComponent({ title: properties.name || '地块详情' });
+  const content = document.createElement('ul');
+  content.innerHTML = `
+    <li><span class="label">面积:</span><span class="value">${properties.areaMu || 'N/A'} 亩</span></li>
+    <li><span class="label">作物:</span><span class="value">${properties.crop || '未种植'}</span></li>
+    <li><span class="label">ID:</span><span class="value">${properties.id || 'N/A'}</span></li>
+  `;
+  popupContainer.querySelector('.popup-content').appendChild(content);
+
+  activePopup = new maplibregl.Popup({ closeButton: false, maxWidth: 'none' })
+    .setLngLat(lngLat)
+    .setDOMContent(popupContainer)
+    .addTo(map.value);
+};
+
+const showDevicePopup = (properties, lngLat) => {
+  const popupContainer = createPopupComponent({ title: properties.name || '设备详情' });
+  const content = document.createElement('ul');
+  content.innerHTML = `
+    <li><span class="label">类型:</span><span class="value">${properties.type || 'N/A'}</span></li>
+    <li><span class="label">状态:</span><span class="value">${properties.status || 'N/A'}</span></li>
+    <li><span class="label">ID:</span><span class="value">${properties.id || 'N/A'}</span></li>
+  `;
+  popupContainer.querySelector('.popup-content').appendChild(content);
+  
+  activePopup = new maplibregl.Popup({ closeButton: false, maxWidth: 'none', offset: 25 })
+    .setLngLat(lngLat)
+    .setDOMContent(popupContainer)
+    .addTo(map.value);
 };
 
 const setLayerVisibility = (layerKey, visible) => {
@@ -959,45 +1086,6 @@ const createPopupComponent = (propsData) => {
   return container;
 };
 
-const showPlotPopup = (properties, lngLat) => {
-  const popupContainer = createPopupComponent({ title: properties.name || '地块详情' });
-  const content = document.createElement('ul');
-  content.innerHTML = `
-    <li><span class="label">面积:</span><span class="value">${properties.areaMu || 'N/A'} 亩</span></li>
-    <li><span class="label">作物:</span><span class="value">${properties.crop || '未种植'}</span></li>
-    <li><span class="label">ID:</span><span class="value">${properties.id || 'N/A'}</span></li>
-  `;
-  popupContainer.querySelector('.popup-content').appendChild(content);
-
-  activePopup = new maplibregl.Popup({ closeButton: false, maxWidth: 'none' })
-    .setLngLat(lngLat)
-    .setDOMContent(popupContainer)
-    .addTo(map.value);
-};
-
-const showDevicePopup = (properties, lngLat) => {
-  const popupContainer = createPopupComponent({ title: properties.name || '设备详情' });
-  const content = document.createElement('ul');
-  content.innerHTML = `
-    <li><span class="label">类型:</span><span class="value">${properties.type || 'N/A'}</span></li>
-    <li><span class="label">状态:</span><span class="value">${properties.status || 'N/A'}</span></li>
-    <li><span class="label">ID:</span><span class="value">${properties.id || 'N/A'}</span></li>
-  `;
-  popupContainer.querySelector('.popup-content').appendChild(content);
-  
-  activePopup = new maplibregl.Popup({ closeButton: false, maxWidth: 'none', offset: 25 })
-    .setLngLat(lngLat)
-    .setDOMContent(popupContainer)
-    .addTo(map.value);
-};
-
-const flyTo = (options) => {
-  if (map.value) map.value.flyTo(options);
-};
-
-defineExpose({
-  flyTo,
-});
 
 onMounted(initializeMap);
 

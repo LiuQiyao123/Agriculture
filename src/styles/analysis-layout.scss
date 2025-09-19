@@ -39,38 +39,41 @@
   min-height: 0;
   display: grid;
   gap: 20px;
-  grid-template-columns: 14fr 10fr; /* ~60/40 split */
-  grid-template-rows: 1fr auto; 
-  grid-template-areas:
-    "map ai"
-    "table table";
+  grid-template-columns: 7fr 3fr; /* ~70/30 split */
+  grid-template-areas: "main sidebar";
 }
 
-.grid-map { 
-  grid-area: map;
-  min-height: 0;
-}
-.grid-ai-panels {
-  grid-area: ai;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    "transparency suggestion"
-    "validation validation";
+.grid-main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
   min-height: 0;
-  .ai-panel-validation {
-    grid-column: 1 / -1; // Span across both columns
-  }
 }
-.ai-panel-transparency { grid-area: transparency; }
-.ai-panel-suggestion { grid-area: suggestion; }
-.ai-panel-validation { grid-area: validation; min-height: 300px; }
+
+.grid-map {
+  flex: 1 1 50%;
+  min-height: 400px;
+}
 
 .grid-table {
-  grid-area: table;
-  height: 280px; 
+   flex: 1 1 50%;
+   min-height: 300px;
+   height: auto; /* Override fixed height */
+}
+
+.grid-sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.grid-sidebar > * {
+  flex-shrink: 0;
 }
 
 :deep(.data-panel) {

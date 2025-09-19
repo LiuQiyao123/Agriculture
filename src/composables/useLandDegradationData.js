@@ -1,68 +1,98 @@
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed } from 'vue';
+import shandongPlots from '@/mock/shandong-plots.json';
 
-export function useLandDegradationData() {
-  const tableRef = ref(null);
+// Mock data specific to land degradation analysis
+const tableData = shandongPlots.features.map(f => ({
+  plot: f.properties.name,
+  crop: ['玉米', '棉花', '大豆'][Math.floor(Math.random() * 3)],
+  degradationLevel: ['轻微', '中度', '严重'][Math.floor(Math.random() * 3)],
+  organicMatter: (Math.random() * 10 + 5).toFixed(2),
+  ph: (Math.random() * 2 + 5.5).toFixed(2),
+  salinity: (Math.random() * 1.5).toFixed(2),
+  mainReason: ['过度耕作', '水土流失', '盐碱化'][Math.floor(Math.random() * 3)],
+  // Include plot id for linking
+  plotId: f.properties.id,
+}));
 
+const filterFields = [
+  { id: 'plot', name: '地块', type: 'select', options: tableData.map(d => d.plot) },
+  { id: 'degradationLevel', name: '退化等级', type: 'select', options: ['轻微', '中度', '严重'] }
+];
+
+export function useLandDegradationData(mapRef, tableRef) {
   const filters = ref({
-    type: '',
-    level: '',
+    plot: null,
+    degradationLevel: null,
   });
-
-  const tableData = ref([
-    { plotId: 'PLOT-089', type: '土壤酸化', level: '重度', area: '15.2', suggestion: '施用石灰改良' },
-    { plotId: 'PLOT-121', type: '土壤盐碱化', level: '中度', area: '22.8', suggestion: '种植耐盐作物' },
-    { plotId: 'PLOT-034', type: '养分流失', level: '轻度', area: '8.5', suggestion: '增施有机肥' },
-    { plotId: 'PLOT-067', type: '土壤板结', level: '中度', area: '19.4', suggestion: '深耕、增施有机肥' },
-  ]);
 
   const filteredTableData = computed(() => {
-    return tableData.value.filter(item => {
-      const typeMatch = filters.value.type ? item.type === filters.value.type : true;
-      const levelMatch = filters.value.level ? item.level === filters.value.level : true;
-      return typeMatch && levelMatch;
+    return tableData.filter(item => {
+      const plotMatch = !filters.value.plot || item.plot === filters.value.plot;
+      const levelMatch = !filters.value.degradationLevel || item.degradationLevel === filters.value.degradationLevel;
+      return plotMatch && levelMatch;
     });
   });
-
-  onMounted(() => {
-    nextTick(() => {
-      if (tableRef.value && filteredTableData.value.length > 0) {
-        tableRef.value.setCurrentRow(filteredTableData.value[0]);
-      }
-    });
+  
+  const processedPlots = computed(() => {
+    return {
+      ...shandongPlots,
+      features: shandongPlots.features.map(feature => {
+        const plotData = filteredTableData.value.find(d => d.plotId === feature.properties.id);
+        return {
+          ...feature,
+          properties: {
+            ...feature.properties,
+            ...plotData
+          }
+        };
+      })
+    };
   });
 
-  const pieChartOptions = ref({
-    tooltip: { trigger: 'item', backgroundColor: 'rgba(0,0,0,0.7)', borderColor: '#333', textStyle: { color: '#fff' } },
-    legend: { top: '5%', left: 'center', textStyle: { color: '#ccc' } },
-    series: [{ name: '退化类型', type: 'pie', radius: '50%', data: [{ value: 45, name: '水土流失' }, { value: 28, name: '土壤酸化' }, { value: 15, name: '盐碱化' }, { value: 12, name: '其他' }], emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } } }]
-  });
-
+  const handleCurrentChange = (row) => {
+    if (!row || !mapRef.value) return;
+    // Potentially flyTo map on row change in the future
+  };
+  
   const aiAnalysisContent = computed(() => {
+    // Simulate AI analysis based on the entirety of the data
+    const highRiskPlots = tableData.filter(p => p.degradationLevel === '严重');
+    const moderateRiskPlots = tableData.filter(p => p.degradationLevel === '中度');
+    const mainReasonCounts = tableData.reduce((acc, plot) => {
+      acc[plot.mainReason] = (acc[plot.mainReason] || 0) + 1;
+      return acc;
+    }, {});
+    const mostCommonReason = Object.keys(mainReasonCounts).reduce((a, b) => mainReasonCounts[a] > mainReasonCounts[b] ? a : b, '');
+
     return {
       sections: [
         {
-          title: '主要风险',
+          title: 'AI 综合诊断',
           list: [
-            'PLOT-088：检测到中度水土流失风险，表层土壤流失率约 5 t/ha·year。',
-            'PLOT-121：土壤酸化趋势明显，pH值已降至 5.2。',
+            `发现 ${highRiskPlots.length} 块地块存在'严重'退化风险，主要集中在北部区域。`,
+            `共 ${moderateRiskPlots.length} 块地块存在'中度'退化风险，需关注其有机质含量变化。`,
+            `当前农场主要的退化原因是'${mostCommonReason}'，占比 ${(mainReasonCounts[mostCommonReason] / tableData.length * 100).toFixed(1)}%。`
           ]
         },
         {
-          title: '修复建议',
+          title: '智能决策建议',
           list: [
-            '对 PLOT-088 采用等高线种植，并增设植被缓冲带。',
-            '对 PLOT-121 施用石灰或生物炭改良，每亩 50-80 kg。',
+            "针对'严重'退化地块，建议立即实施休耕或种植绿肥作物（如苜蓿、三叶草）以恢复土壤有机质。",
+            "针对'水土流失'严重的地块，建议修建等高线梯田或增加植被覆盖率。",
+            "建议对所有'中度'及以上退化地块进行土壤样本深度分析，以制定精准的改良方案。",
+            "引入免耕或少耕技术，以减少土壤扰动，保护土壤结构。"
           ]
         }
       ]
-    }
+    };
   });
 
   return {
-    tableRef,
+    processedPlots,
     filters,
+    filterFields,
     filteredTableData,
-    pieChartOptions,
-    aiAnalysisContent,
+    handleCurrentChange,
+    aiAnalysisContent
   };
 }

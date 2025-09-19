@@ -8,14 +8,16 @@
         <slot name="filter-bar"></slot>
       </div>
       <div class="main-content-grid">
-        <div class="grid-map">
-          <slot name="map"></slot>
+        <div class="grid-main">
+          <div class="grid-map">
+            <slot name="map"></slot>
+          </div>
+          <div class="grid-table">
+            <slot name="table"></slot>
+          </div>
         </div>
-        <div class="grid-ai-panels">
+        <div class="grid-sidebar">
           <slot name="ai-panels"></slot>
-        </div>
-        <div class="grid-table">
-          <slot name="table"></slot>
         </div>
       </div>
     </div>

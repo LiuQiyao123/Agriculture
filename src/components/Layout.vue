@@ -102,14 +102,16 @@ const activeMenu = computed(() => {
   return route.path;
 })
 
-const isAnalysisActive = computed(() => route.path.startsWith('/intelligent-analysis') || route.path.startsWith('/data-center'));
+const isAnalysisActive = computed(() => {
+  // Any route that has children should be considered for active state styling
+  // This logic now correctly reflects any top-level menu item with a dropdown
+  const topLevelRoute = route.path.split('/')[1];
+  const matchedRoute = menuRoutes.value.find(r => r.path === topLevelRoute);
+  return matchedRoute && matchedRoute.children && matchedRoute.children.length > 0;
+});
 
 const navigateTo = (path) => {
-  // 检查这个路径是否有子菜单，如果有则不跳转
-  const route = menuRoutes.value.find(r => '/' + r.path === path);
-  if (route && route.children && route.children.length > 0) {
-    return; // 有子菜单的路由不跳转
-  }
+  // Simplified navigation, as the template already prevents navigation on dropdown headers.
   router.push(path);
 }
 

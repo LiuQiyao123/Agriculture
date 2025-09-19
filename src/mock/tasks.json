@@ -1,0 +1,114 @@
+[
+  {
+    "id": 1,
+    "title": "AI建议：A-03地块玉米发生干旱预警，建议立即灌溉",
+    "plotId": "plot-a03",
+    "plotName": "A-03地块",
+    "assignee": "王强",
+    "priority": "高",
+    "dueDate": "2025-09-20",
+    "description": "土壤湿度低于15%，需要立即启动喷灌系统。",
+    "status": "todo"
+  },
+  {
+    "id": 2,
+    "title": "B-01地块棉花第一次追肥",
+    "plotId": "plot-b01",
+    "plotName": "B-01地块",
+    "assignee": "李丽",
+    "priority": "中",
+    "dueDate": "2025-09-21",
+    "description": "根据土壤健康诊断结果，补充尿素15kg/亩。",
+    "status": "todo"
+  },
+  {
+    "id": 3,
+    "title": "C-01地块无人机巡田",
+    "plotId": "plot-c01",
+    "plotName": "C-01地块",
+    "assignee": "赵飞",
+    "priority": "低",
+    "dueDate": "2025-09-22",
+    "description": "例行巡查，检查作物长势和病虫害情况。",
+    "status": "in-progress"
+  },
+  {
+    "id": 4,
+    "title": "A-01地块修复2号灌溉阀门",
+    "plotId": "plot-a01",
+    "plotName": "A-01地块",
+    "assignee": "孙立",
+    "priority": "高",
+    "dueDate": "2025-09-19",
+    "description": "阀门漏水，需要紧急维修。",
+    "status": "in-progress"
+  },
+  {
+    "id": 5,
+    "title": "A-02地块病虫害防治",
+    "plotId": "plot-a02",
+    "plotName": "A-02地块",
+    "assignee": "王强",
+    "priority": "中",
+    "dueDate": "2025-09-20",
+    "description": "已完成喷药，请主管验收。",
+    "status": "review"
+  },
+  {
+    "id": 6,
+    "title": "D-01地块完成上周巡检报告",
+    "plotId": "plot-d01",
+    "plotName": "D-01地块",
+    "assignee": "周平",
+    "priority": "低",
+    "dueDate": "2025-09-18",
+    "description": "报告已提交至系统。",
+    "status": "done",
+    "impact": { "土壤健康评分": "+3", "预计产量": "+1.5%" }
+  },
+  {
+    "id": 7,
+    "title": "B-01地块第二次灌溉",
+    "plotId": "plot-b01",
+    "plotName": "B-01地块",
+    "assignee": "李丽",
+    "priority": "中",
+    "dueDate": "2025-09-23",
+    "description": "根据墒情监测，补充水分。",
+    "status": "todo"
+  },
+  {
+    "id": 8,
+    "title": "A-03地块病虫害初步巡查",
+    "plotId": "plot-a03",
+    "plotName": "A-03地块",
+    "assignee": "赵飞",
+    "priority": "低",
+    "dueDate": "2025-09-24",
+    "description": "检查是否有玉米螟虫害迹象。",
+    "status": "in-progress"
+  },
+  {
+    "id": 9,
+    "title": "C-01地块采收前准备",
+    "plotId": "plot-c01",
+    "plotName": "C-01地块",
+    "assignee": "王强",
+    "priority": "高",
+    "dueDate": "2025-09-25",
+    "description": "清理田间杂物，准备采收机械。",
+    "status": "review"
+  },
+  {
+    "id": 10,
+    "title": "A-01地块施加叶面肥",
+    "plotId": "plot-a01",
+    "plotName": "A-01地块",
+    "assignee": "孙立",
+    "priority": "低",
+    "dueDate": "2025-09-26",
+    "description": "补充微量元素，促进生长。",
+    "status": "done",
+    "impact": { "作物长势(NDVI)": "+0.05", "叶绿素含量": "+2%" }
+  }
+]
