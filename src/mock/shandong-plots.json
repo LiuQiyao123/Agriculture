@@ -100,6 +100,146 @@
         "type": "Polygon",
         "coordinates": [[[118.5, 37.4], [118.6, 37.4], [118.6, 37.5], [118.5, 37.5], [118.5, 37.4]]]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "F06",
+        "name": "F-06",
+        "crop": "水稻",
+        "areaMu": 12030,
+        "owner": "钱八",
+        "phone": "13432109876",
+        "soilScore": 91,
+        "soilMoisture": 78,
+        "organicMatter": 3.5,
+        "pestSeverity": "low",
+        "ndvi": 0.79
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[116.8, 36.2], [116.9, 36.2], [116.9, 36.3], [116.8, 36.3], [116.8, 36.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "G07",
+        "name": "G-07",
+        "crop": "小麦",
+        "areaMu": 8970,
+        "owner": "周九",
+        "phone": "13321098765",
+        "soilScore": 83,
+        "soilMoisture": 45,
+        "organicMatter": 2.8,
+        "pestSeverity": "medium",
+        "ndvi": 0.68
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[119.2, 35.8], [119.3, 35.8], [119.3, 35.9], [119.2, 35.9], [119.2, 35.8]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "H08",
+        "name": "H-08",
+        "crop": "玉米",
+        "areaMu": 6720,
+        "owner": "吴十",
+        "phone": "13210987654",
+        "soilScore": 76,
+        "soilMoisture": 38,
+        "organicMatter": 2.2,
+        "pestSeverity": "high",
+        "ndvi": 0.62
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[117.8, 37.1], [117.9, 37.1], [117.9, 37.2], [117.8, 37.2], [117.8, 37.1]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "I09",
+        "name": "I-09",
+        "crop": "花生",
+        "areaMu": 4580,
+        "owner": "郑一",
+        "phone": "13109876543",
+        "soilScore": 89,
+        "soilMoisture": 52,
+        "organicMatter": 3.1,
+        "pestSeverity": "low",
+        "ndvi": 0.74
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[118.3, 36.5], [118.4, 36.5], [118.4, 36.6], [118.3, 36.6], [118.3, 36.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "J10",
+        "name": "J-10",
+        "crop": "大豆",
+        "areaMu": 5640,
+        "owner": "王二",
+        "phone": "13098765432",
+        "soilScore": 94,
+        "soilMoisture": 58,
+        "organicMatter": 3.8,
+        "pestSeverity": "none",
+        "ndvi": 0.85
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[119.7, 36.4], [119.8, 36.4], [119.8, 36.5], [119.7, 36.5], [119.7, 36.4]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "K11",
+        "name": "K-11",
+        "crop": "棉花",
+        "areaMu": 7390,
+        "owner": "李三",
+        "phone": "13987654321",
+        "soilScore": 81,
+        "soilMoisture": 41,
+        "organicMatter": 2.6,
+        "pestSeverity": "medium",
+        "ndvi": 0.71
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[116.5, 35.6], [116.6, 35.6], [116.6, 35.7], [116.5, 35.7], [116.5, 35.6]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "L12",
+        "name": "L-12",
+        "crop": "水稻",
+        "areaMu": 9860,
+        "owner": "张四",
+        "phone": "13876543210",
+        "soilScore": 87,
+        "soilMoisture": 72,
+        "organicMatter": 3.3,
+        "pestSeverity": "low",
+        "ndvi": 0.77
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[120.1, 37.0], [120.2, 37.0], [120.2, 37.1], [120.1, 37.1], [120.1, 37.0]]]
+      }
     }
   ]
 }

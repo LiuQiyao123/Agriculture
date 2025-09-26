@@ -11,11 +11,11 @@
 - [x] **`CropGrowthAnalysis.vue` (作物长势诊断)** - ✅ **已完成** (作为基础模板)
 - [x] **`LandDegradationAnalysis.vue` (地力退化评估)** - ✅ **已完成**
 - [x] **`LandUseAnalysis.vue` (地块利用评估)** - ✅ **已完成**
-- [ ] **`MoistureAnalysis.vue` (土壤墒情监测)** - ⏳ **下一个任务**
-- [ ] **`PestPrediction.vue` (病虫害风险预警)**
-- [ ] **`YieldPrediction.vue` (作物产量预测)**
-- [ ] **`SoilQualityAnalysis.vue` (土壤健康诊断)**
-- [ ] **`WeatherAlert.vue` (农业气象预警)**
+- [x] **`MoistureAnalysis.vue` (土壤墒情监测)** - ✅ **已完成**
+- [x] **`PestPrediction.vue` (病虫害风险预警)** - ✅ **已完成**
+- [x] **`YieldPrediction.vue` (作物产量预测)** - ✅ **已完成**
+- [x] **`SoilQualityAnalysis.vue` (土壤健康诊断)** - ✅ **已完成**
+- [x] **`WeatherAlert.vue` (农业气象预警)** - ✅ **已完成**
 
 ---
 

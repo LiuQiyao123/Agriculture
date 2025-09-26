@@ -10,6 +10,14 @@ $text-color: #c0c4cc; // Main text color
 $text-color-secondary: #a0a6b8; // Secondary/dimmed text color
 $title-color: #ffffff; // Title text color
 
+// 1.1 Additional Text Colors
+$text-primary: $text-color; // Primary text color
+$text-secondary: $text-color-secondary; // Secondary text color
+$text-tertiary: #808080; // Tertiary text color
+
+// 1.2 Primary Color
+$primary-color: $primary-accent-color; // Primary color alias
+
 // 2. ECharts Dark Theme Colors
 $chart-bg-color: transparent; // Chart background
 $chart-axis-line-color: rgba(255, 255, 255, 0.3);

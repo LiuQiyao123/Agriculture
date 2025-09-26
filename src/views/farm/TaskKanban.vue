@@ -1,3 +1,4 @@
+
 <template>
   <div class="task-management-page">
     <!-- 1. KPI Stats -->
@@ -209,7 +210,6 @@ import tasksData from '@/mock/tasks.json';
 import usersData from '@/mock/users.json';
 import maplibregl from 'maplibre-gl';
 
-
 // --- Helper Functions ---
 const getCentroid = (coordinates) => {
   // Assuming first ring is the outer boundary
@@ -228,14 +228,12 @@ const getTaskType = (title) => {
   return 'general';
 };
 
-
 // --- Map Logic ---
 const baseMapRef = ref(null);
 const highlightedPlotId = ref(null);
 const popupContainer = ref(null);
 let activePopupInstance = null;
 const selectedTaskForPopup = ref(null);
-
 
 const mapLayers = computed(() => {
     // Layer for individual task points
@@ -317,7 +315,6 @@ const onFeatureClicked = ({ layerId, feature, lngLat }) => {
     });
   }
 };
-
 
 // --- Data Source ---
 const tasks = ref(tasksData);
@@ -482,7 +479,6 @@ const getStatusTagType = (status) => {
 
 // Initial data load
 applyFilters();
-
 </script>
 
 <style scoped>
@@ -554,7 +550,6 @@ applyFilters();
   overflow: hidden;
   border: 1px solid #e0e0e0;
 }
-
 
 /* Kanban View Styles */
 .kanban-board {
@@ -682,7 +677,6 @@ applyFilters();
   padding-bottom: 0;
 }
 
-
 .task-popup .info-row span {
   color: #a0a6b8;
 }
@@ -716,3 +710,5 @@ applyFilters();
   font-weight: bold;
 }
 </style>
+
+

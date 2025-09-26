@@ -1,6 +1,6 @@
 <template>
   <AnalysisPageLayout>
-    <template #title>地力退化分析</template>
+    <template #title>土地退化监测</template>
 
     <template #filter-bar>
       <FilterBar v-model="filters" :fields="filterFields" />
@@ -12,13 +12,7 @@
           ref="baseMapRef"
           :layers="mapLayers"
         />
-        <div class="map-controls">
-          <LayerControl 
-            :layers="analysisLayers"
-            :initialActiveLayers="initialActiveLayers"
-            @layer-visibility-changed="handleLayerVisibilityChange"
-          />
-        </div>
+        
       </DataPanel>
     </template>
     

@@ -1,6 +1,6 @@
 <template>
   <AnalysisPageLayout>
-    <template #title>作物长势遥感监测</template>
+    <template #title>地块利用评估</template>
 
     <template #filter-bar>
       <FilterBar v-model="filters" :fields="filterFields" />
@@ -12,14 +12,7 @@
           ref="baseMapRef"
           :layers="mapLayers"
         />
-        <!-- Map Controls are now part of the page layout, not the map component -->
-        <div class="map-controls">
-          <LayerControl 
-            :layers="analysisLayers"
-            :initialActiveLayers="initialActiveLayers"
-            @layer-visibility-changed="handleLayerVisibilityChange"
-          />
-        </div>
+        
       </DataPanel>
     </template>
 

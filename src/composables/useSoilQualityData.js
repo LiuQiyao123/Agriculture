@@ -1,145 +1,300 @@
-import { ref, computed, watch, nextTick } from 'vue';
-import { getProcessedGeoJSON } from '@/services/MapService.js';
-import originalPlots from '@/mock/shandong-plots.json';
+import { ref, computed, watch } from 'vue';
+import shandongPlots from '@/mock/shandong-plots.json';
 
-function getPolygonCenter(coordinates) {
-  if (!coordinates || !coordinates[0] || coordinates[0].length === 0) {
-    return [118.5, 36.5];
+function generateComprehensiveSoilAdvice(plotData) {
+  const { plotId, ph, organicMatter, nitrogen, phosphorus, potassium, overallHealth } = plotData;
+
+  const healthModel = {
+    scores: {
+      ph: {
+        score: (ph > 6.0 && ph < 8.0) ? 1.0 : 0.4,
+        reasoning: (ph > 6.0 && ph < 8.0) ? `pH值(${ph})适中。` : `pH值(${ph})异常，影响养分吸收。`
+      },
+      organicMatter: {
+        score: parseFloat(organicMatter) >= 2.0 ? 1.0 : 0.5,
+        reasoning: parseFloat(organicMatter) >= 2.0 ? `有机质(${organicMatter})含量充足。` : `有机质(${organicMatter})偏低，土壤肥力不足。`
+      },
+      nutrients: {
+        score: parseFloat(nitrogen) > 100 && parseFloat(phosphorus) > 40 && parseFloat(potassium) > 120 ? 1.0 : 0.6,
+        reasoning: parseFloat(nitrogen) > 100 ? '主要养分含量正常。' : '速效氮(${nitrogen})偏低。'
+      },
+      structure: { // Placeholder for soil structure
+        score: 0.8,
+        reasoning: '土壤结构基本良好。'
+      }
+    },
+    compositeScore: 0,
+  };
+  healthModel.compositeScore = (healthModel.scores.ph.score * 0.3 + healthModel.scores.organicMatter.score * 0.4 + healthModel.scores.nutrients.score * 0.3) * 100;
+
+  const diagnosis = {
+    kpis: {
+      ph: { value: parseFloat(ph), trend: 0.1, optimal: 7.0, status: healthModel.scores.ph.score > 0.5 ? '正常' : '异常' },
+      organicMatter: { value: parseFloat(organicMatter), trend: -0.1, optimal: 2.5, status: healthModel.scores.organicMatter.score > 0.5 ? '充足' : '偏低' },
+      nitrogen: { value: parseFloat(nitrogen), trend: 5, optimal: 120, status: healthModel.scores.nutrients.score > 0.5 ? '充足' : '偏低' },
+    },
+    summary: '',
+    risks: [],
+  };
+
+  if (healthModel.scores.ph.score < 1.0) diagnosis.risks.push(`[酸碱失衡] ${healthModel.scores.ph.reasoning}`);
+  if (healthModel.scores.organicMatter.score < 1.0) diagnosis.risks.push(`[地力不足] ${healthModel.scores.organicMatter.reasoning}`);
+  if (healthModel.scores.nutrients.score < 1.0) diagnosis.risks.push(`[养分缺乏] ${healthModel.scores.nutrients.reasoning}`);
+  
+  diagnosis.summary = `AI土壤健康综合指数评定为 ${healthModel.compositeScore.toFixed(0)} 分。`;
+  if(diagnosis.risks.length > 0) {
+    diagnosis.summary += `当前主要诊断出 ${diagnosis.risks.length} 个潜在风险。`;
+  } else {
+    diagnosis.summary += `土壤健康状况良好。`;
   }
-  const coords = coordinates[0];
-  let minLng = coords[0][0], maxLng = coords[0][0], minLat = coords[0][1], maxLat = coords[0][1];
-  for (const [lng, lat] of coords) {
-    if (lng < minLng) minLng = lng;
-    if (lng > maxLng) maxLng = lng;
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
+
+  let improvementTask = null;
+  if (diagnosis.risks.length > 0) {
+    improvementTask = {
+      method: '精准改良',
+      materials: [],
+      amount: '视具体情况而定'
+    };
+    if (healthModel.scores.ph.score < 1.0) improvementTask.materials.push('石灰/石膏');
+    if (healthModel.scores.organicMatter.score < 1.0) improvementTask.materials.push('有机肥');
+    if (healthModel.scores.nutrients.score < 1.0) improvementTask.materials.push('平衡复合肥');
   }
-  return [(minLng + maxLng) / 2, (minLat + maxLat) / 2];
+
+  const advice = {
+    overview: {
+      plotId: plotId,
+      targetCrop: `地块 (${overallHealth})`,
+      coreTask: diagnosis.risks.length > 0 ? '土壤健康改良' : '维持地力',
+      executionWindow: '下一轮种植前',
+      priority: overallHealth === '较差' ? '高' : (overallHealth === '中等' ? '中' : '低'),
+    },
+    improvementTask,
+    decisionBasis: diagnosis.risks,
+    costBenefit: {
+      estimatedCost: (improvementTask ? improvementTask.materials.length * 150 : 20).toFixed(2), // Simplified cost
+      expectedBenefits: '预计改良后，作物产量潜力提升8%-15%，化肥利用率提高10%。',
+    }
+  };
+
+  return { diagnosis, advice, healthModel };
 }
 
-export function useSoilQualityData(gisMapRef, tableRef) {
-  const currentRow = ref(null);
+// 定义模拟的土壤健康诊断表格数据
+const tableData = ref([
+  {
+    plotId: '地块A01',
+    ph: '6.8',
+    organicMatter: '2.5%',
+    nitrogen: '120 mg/kg',
+    phosphorus: '55 mg/kg',
+    potassium: '150 mg/kg',
+    overallHealth: '良好',
+  },
+  {
+    plotId: '地块B02',
+    ph: '5.9',
+    organicMatter: '1.8%',
+    nitrogen: '85 mg/kg',
+    phosphorus: '30 mg/kg',
+    potassium: '110 mg/kg',
+    overallHealth: '中等',
+  },
+  {
+    plotId: '地块C03',
+    ph: '7.5',
+    organicMatter: '1.5%',
+    nitrogen: '70 mg/kg',
+    phosphorus: '25 mg/kg',
+    potassium: '95 mg/kg',
+    overallHealth: '较差',
+  },
+  {
+    plotId: '地块D04',
+    ph: '6.5',
+    organicMatter: '2.8%',
+    nitrogen: '135 mg/kg',
+    phosphorus: '60 mg/kg',
+    potassium: '160 mg/kg',
+    overallHealth: '良好',
+  },
+  {
+    plotId: '地块E05',
+    ph: '6.2',
+    organicMatter: '2.1%',
+    nitrogen: '105 mg/kg',
+    phosphorus: '45 mg/kg',
+    potassium: '130 mg/kg',
+    overallHealth: '中等',
+  },
+]);
 
-  const processedPlots = computed(() => {
-    return getProcessedGeoJSON(originalPlots, 'soil-quality');
-  });
+// 定义筛选字段配置
+const filterFields = ref([
+  {
+    type: 'select',
+    label: '健康状况',
+    model: 'overallHealth',
+    options: ['全部', '良好', '中等', '较差'],
+  },
+]);
 
-  const filters = ref({
-    level: '',
-    region: '',
-  });
 
-  const filterFields = ref([
-    {
-      type: 'select',
-      model: 'level',
-      label: '肥力等级',
-      placeholder: '请选择等级',
-      options: [
-        { label: '贫瘠', value: '贫瘠' },
-        { label: '较差', value: '较差' },
-        { label: '中等', value: '中等' },
-        { label: '良好', value: '良好' },
-        { label: '优', value: '优' },
-      ],
-    },
-    {
-      type: 'input',
-      model: 'region',
-      label: '区域',
-      placeholder: '请输入区域关键字',
-    },
-  ]);
-
-  const suggestionContent = computed(() => {
-    if (!currentRow.value) {
-      return { sections: [{ title: 'AI 土壤改良建议', paragraph: '请在下方列表中选择一个地块以查看建议。' }] };
-    }
-    const suggestions = {
-        '贫瘠': [
-            '基础改良：施用腐熟有机肥 3000-4000 kg/亩，深耕 30-40cm。',
-            '养分补充：补充缓释氮肥 15kg/亩，磷肥 8kg/亩，钾肥 12kg/亩。',
-            '结构优化：种植绿肥（如紫云英）一季后翻压还田，增加土壤孔隙度。',
-        ],
-        '较差': [
-            '基础改良：施用腐熟有机肥 2000-3000 kg/亩。',
-            '养分补充：根据作物需求补充氮磷钾肥。',
-        ],
-        '中等': ['维持当前施肥方案，增施少量有机肥。'],
-        '良好': ['保持现有耕作习惯，定期监测土壤养分。'],
-        '优': ['土壤状况极佳，无需特别干预。']
-    };
-
-    return {
-      sections: [
-        {
-          title: `地块：${currentRow.value.region}`,
-          list: [
-            `问题诊断：有机质含量${currentRow.value.level === '贫瘠' || currentRow.value.level === '较差' ? '偏低' : '正常'} (${currentRow.value.organicMatter})，氮磷钾养分需调整。`,
-          ]
-        },
-        {
-          title: '改良方案',
-          list: suggestions[currentRow.value.level] || ['暂无具体建议。']
-        },
-        {
-          title: '预期效果',
-          paragraph: `1-2年内有机质提升至 ${(parseFloat(currentRow.value.organicMatter) * 1.5).toFixed(1)}%，作物产量提升 10-15%。`
-        }
-      ]
-    }
-  });
-
+export function useSoilQualityData(baseMapRef, tableRef) {
   const tableData = ref([
-    { id: 1, region: '历下区', plotId: 'A-01', level: '贫瘠', organicMatter: '0.8%', nitrogen: '55', phosphorus: '12', potassium: '110' },
-    { id: 2, region: '市南区', plotId: 'B-02', level: '较差', organicMatter: '1.5%', nitrogen: '70', phosphorus: '25', potassium: '150' },
-    { id: 3, region: '张店区', plotId: 'C-03', level: '中等', organicMatter: '3.2%', nitrogen: '95', phosphorus: '40', potassium: '220' },
-    { id: 4, region: '市中区', plotId: 'D-04', level: '良好', organicMatter: '4.5%', nitrogen: '120', phosphorus: '55', potassium: '280' },
-    { id: 5, region: '东营区', plotId: 'E-05', level: '较差', organicMatter: '2.1%', nitrogen: '80', phosphorus: '30', potassium: '180' },
-  ]);
+    {
+      plotId: '地块A01',
+      ph: '6.8',
+      organicMatter: '2.5%',
+      nitrogen: '120 mg/kg',
+      phosphorus: '55 mg/kg',
+      potassium: '150 mg/kg',
+      overallHealth: '良好',
+    },
+    {
+      plotId: '地块B02',
+      ph: '5.9',
+      organicMatter: '1.8%',
+      nitrogen: '85 mg/kg',
+      phosphorus: '30 mg/kg',
+      potassium: '110 mg/kg',
+      overallHealth: '中等',
+    },
+    {
+      plotId: '地块C03',
+      ph: '7.5',
+      organicMatter: '1.5%',
+      nitrogen: '70 mg/kg',
+      phosphorus: '25 mg/kg',
+      potassium: '95 mg/kg',
+      overallHealth: '较差',
+    },
+    {
+      plotId: '地块D04',
+      ph: '6.5',
+      organicMatter: '2.8%',
+      nitrogen: '135 mg/kg',
+      phosphorus: '60 mg/kg',
+      potassium: '160 mg/kg',
+      overallHealth: '良好',
+    },
+    {
+      plotId: '地块E05',
+      ph: '6.2',
+      organicMatter: '2.1%',
+      nitrogen: '105 mg/kg',
+      phosphorus: '45 mg/kg',
+      potassium: '130 mg/kg',
+      overallHealth: '中等',
+    },
+  ].map(item => {
+    const comprehensiveData = generateComprehensiveSoilAdvice(item);
+    return {
+      ...item,
+      comprehensiveData,
+      healthModel: comprehensiveData.healthModel,
+    }
+  }));
+  
+  const currentRow = ref(null); // Initialize with null
 
-  const filteredTableData = computed(() => {
-    // Filtering logic can be re-enabled here if needed
-    return tableData.value;
-  });
-
-  const handleCurrentChange = (val) => {
-    if (!val) return;
-    currentRow.value = val;
-
-    const feature = originalPlots.features.find(f => f.properties.name === val.plotId);
-    if (feature && gisMapRef.value && typeof gisMapRef.value.flyTo === 'function') {
-      const center = getPolygonCenter(feature.geometry.coordinates);
-      gisMapRef.value.flyTo({
-        center: center,
-        zoom: 12,
-        pitch: 60,
-        bearing: -20,
-        duration: 2000,
-      });
+  const handleCurrentChange = (row) => {
+    if (row) {
+      currentRow.value = row;
+       if (baseMapRef.value) {
+        const plotFeature = processedPlots.value.features.find(f => f.properties.plotId === row.plotId);
+        if (plotFeature && plotFeature.properties.center) {
+          baseMapRef.value.flyTo({ center: plotFeature.properties.center, zoom: 14 });
+        }
+      }
     }
   };
   
+  const diagnosisContent = computed(() => currentRow.value?.comprehensiveData?.diagnosis);
+  const suggestionContent = computed(() => currentRow.value?.comprehensiveData?.advice);
+
+  // 将土壤数据与地块的地理信息数据进行合并处理
+  const processedPlots = computed(() => {
+    const healthStatus = ['良好', '中等', '较差'];
+    return {
+      type: 'FeatureCollection',
+      features: shandongPlots.features.map(feature => {
+        const plotData = tableData.value.find(d => d.plotId.includes(feature.properties.id.slice(-2))) || {};
+        return {
+          ...feature,
+          properties: {
+            ...feature.properties,
+            ...plotData,
+            overallHealth: plotData.overallHealth || healthStatus[Math.floor(Math.random() * healthStatus.length)],
+          },
+        }
+      }),
+    };
+  });
+
+  // 雷达图的配置选项 (改为依赖currentRow)
+  const healthRadarChartOptions = computed(() => {
+    if (!currentRow.value) return {};
+    const scores = currentRow.value.healthModel.scores;
+    const scoreValues = [
+        scores.ph.score * 100, 
+        scores.organicMatter.score * 100, 
+        scores.nutrients.score * 100, 
+        scores.structure.score * 100
+    ];
+
+    return {
+      radar: {
+        indicator: [
+          { name: '酸碱平衡', max: 100 },
+          { name: '有机质含量', max: 100 },
+          { name: '养分状况', max: 100 },
+          { name: '土壤结构', max: 100 },
+        ],
+        axisName: { color: '#fff', fontSize: 12 }
+      },
+      series: [
+        {
+          name: '土壤健康评估',
+          type: 'radar',
+          data: [
+            {
+              value: scoreValues,
+              name: `地块 ${currentRow.value.plotId}`,
+              areaStyle: { color: 'rgba(0, 221, 255, 0.4)' },
+              lineStyle: { color: '#00DDFF' },
+              itemStyle: { color: '#00DDFF' }
+            }
+          ]
+        }
+      ]
+    };
+  });
+  
+  const soilPropertyTrendOptions = computed(() => {
+    if (!currentRow.value) return { series: [] };
+    return { /* ... trend chart config ... */ };
+  });
+
+  // Set initial row after table is mounted
   watch(tableRef, (newTableRef) => {
-    if (newTableRef && filteredTableData.value.length > 0) {
-      const firstRow = filteredTableData.value[0];
-      if (typeof newTableRef.setCurrentRow === 'function') {
-        nextTick(() => {
-          newTableRef.setCurrentRow(firstRow);
-          handleCurrentChange(firstRow);
-        });
-      }
+    if (newTableRef && tableData.value.length > 0) {
+      const firstRow = tableData.value[0];
+      // The table component itself will highlight the row
+      newTableRef.setCurrentRow(firstRow);
+      // Manually trigger the handler to update state and map
+      handleCurrentChange(firstRow);
     }
   }, { once: true });
 
-
   return {
-    processedPlots,
-    filters,
+    tableData,
     filterFields,
-    filteredTableData,
+    processedPlots,
     handleCurrentChange,
-    suggestionContent,
     currentRow,
+    diagnosisContent,
+    suggestionContent,
+    healthRadarChartOptions,
+    soilPropertyTrendOptions,
   };
 }

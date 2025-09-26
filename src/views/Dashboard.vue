@@ -1,7 +1,16 @@
 <template>
   <div class="dashboard-container">
     <!-- Map as the base layer -->
-    <GisMap ref="gisMapRef" :geojson="plots" :layers="gisLayersData" class="base-map" @plot-analysis="handlePlotAnalysis" :show-view-switcher="false" />
+    <GisMap ref="gisMapRef" :geojson="plots" :layers="gisLayersData" class="base-map" @plot-analysis="handlePlotAnalysis" :show-layer-control="false" :show-view-switcher="false" context="analysis" />
+
+    <!-- Layer Control -->
+    <div class="dashboard-layer-control">
+      <LayerControl 
+        :layers="dashboardLayers"
+        :initialActiveLayers="activeLayers"
+        @layer-visibility-changed="handleLayerVisibilityChange"
+      />
+    </div>
 
     <!-- Overlay Panels -->
     <div class="top-metrics overlay-panel">
@@ -206,6 +215,7 @@ import SeamlessScrollList from '@/components/SeamlessScrollList.vue'
 import EchartsWrapper from '@/components/EchartsWrapper.vue'
 import GisMap from '@/components/GisMap.vue'
 import DataPanel from '@/components/DataPanel.vue'
+import LayerControl from '@/components/map/controls/LayerControl.vue'; // 引入LayerControl
 import {
   alertsList,
   plotGeoJson,
@@ -231,6 +241,64 @@ import {
 
 const gisMapRef = ref(null);
 
+// --- 图层控制 ---
+const dashboardLayers = ref([
+  { id: 'plots', name: '地块边界', exclusive: false, defaultVisibility: true },
+  { id: 'sensor-devices', name: '在线设备', exclusive: true, defaultVisibility: true },
+  { id: 'ndvi-tiles', name: '作物长势(NDVI)', exclusive: true, defaultVisibility: false },
+  { id: 'soil-moisture', name: '土壤墒情', exclusive: true, defaultVisibility: false },
+  { id: 'irrigation-system', name: '灌溉系统', exclusive: true, defaultVisibility: false },
+]);
+
+const activeLayers = ref(['plots', 'sensor-devices']);
+
+const handleLayerVisibilityChange = ({ layerId, visible }) => {
+  const isActive = activeLayers.value.includes(layerId);
+  const layerConfig = dashboardLayers.value.find(l => l.id === layerId);
+
+  if (visible) {
+    if (!isActive) {
+      if (layerConfig.exclusive) {
+        // 关闭其他互斥图层
+        dashboardLayers.value.forEach(l => {
+          if (l.exclusive && l.id !== layerId) {
+            const index = activeLayers.value.indexOf(l.id);
+            if (index > -1) {
+              activeLayers.value.splice(index, 1);
+            }
+          }
+        });
+      }
+      activeLayers.value.push(layerId);
+    }
+  } else {
+    if (isActive) {
+      activeLayers.value = activeLayers.value.filter(l => l !== layerId);
+    }
+  }
+  
+  // 通知GisMap组件更新图层状态
+  if (gisMapRef.value && gisMapRef.value.setLayerVisibility) {
+    gisMapRef.value.setLayerVisibility(layerId, visible);
+  }
+};
+
+const gisLayersData = computed(() => {
+  // 根据 activeLayers 动态构建传递给 GisMap 的图层数据
+  // 注意：这里的实现依赖于 GisMap 内部如何处理这些 key
+  // 这是为了兼容旧版 GisMap，理想情况下 GisMap 应直接接收完整的图层配置
+  const layers = {};
+  activeLayers.value.forEach(layerId => {
+    // 假设 gisLayers (from mock) 包含了所有图层的数据源
+    // 我们只需要激活它们
+    if (gisLayers[layerId]) {
+      layers[layerId] = gisLayers[layerId];
+    }
+  });
+  return layers;
+});
+// --- 图层控制结束 ---
+
 const metricsData = [
   { id: 1, title: '主粮产量预测', value: '15.8 万吨', details: '<span style="color:lime">▲ 2.1% (较上周预测)</span>', icon: DataAnalysis, iconTheme: 'green' },
   { id: 2, title: '重大病虫害影响面积', value: '1.5 万亩', details: '<span style="color:red">稻飞虱影响</span>', icon: Notification, iconTheme: 'purple' },
@@ -240,7 +308,6 @@ const metricsData = [
 const metrics = ref(metricsData);
 const alerts = ref(alertsList)
 const plots = ref(plotGeoJson)
-const gisLayersData = ref(gisLayers);
 
 const aiDiagnosisReport = ref(
   '当前全县85%作物长势良好。其中，南部区域因光照充足，长势普遍优于北部；白马乡有约200亩地块NDVI值连续两周下降，已发出长势异常预警，需重点关注。'
@@ -726,6 +793,14 @@ const getSoilMoistureHistoryOptions = (plot) => {
   width: 100%;
   height: 100%;
   z-index: 1;
+}
+
+.dashboard-layer-control {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
 }
 
 .overlay-panel {

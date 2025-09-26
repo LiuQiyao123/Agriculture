@@ -1,36 +1,70 @@
 <template>
-  <div class="placeholder-page">
-    <h1>数据统计分析</h1>
-    <p>此页面正在开发中...</p>
+  <div class="page-container">
+    <PageTitle title="数据统计分析 (Data Statistics)" subtitle="洞察农场运营数据，驱动智能化决策" />
+    <div class="stats-grid">
+      <div class="grid-item">
+        <EchartsWrapper :options="plotAreaChartOptions" />
+      </div>
+      <div class="grid-item">
+        <EchartsWrapper :options="cropVarietyChartOptions" />
+      </div>
+      <div class="grid-item">
+        <EchartsWrapper :options="taskStatusChartOptions" />
+      </div>
+      <div class="grid-item wide">
+        <EchartsWrapper :options="yieldTrendChartOptions" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-// This is a placeholder component.
+import { onMounted } from 'vue';
+import PageTitle from '@/components/PageTitle.vue';
+import EchartsWrapper from '@/components/EchartsWrapper.vue';
+import { useFarmStats } from '@/composables/farm/useFarmStats.js';
+
+const {
+  fetchData,
+  plotAreaChartOptions,
+  cropVarietyChartOptions,
+  taskStatusChartOptions,
+  yieldTrendChartOptions,
+} = useFarmStats();
+
+onMounted(() => {
+  fetchData();
+});
 </script>
 
-<style scoped>
-.placeholder-page {
+<style scoped lang="scss">
+.page-container {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  padding: 10px;
+}
+
+.stats-grid {
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 20px;
+  padding-top: 10px;
+}
+
+.grid-item {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0,170,255,.3);
+  border-radius: 4px;
+  display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
-  padding: 40px;
-  text-align: center;
-  background-color: #f4f7fa;
-  border-radius: 8px;
-  border: 2px dashed #dcdfe6;
+  padding: 10px;
 }
 
-h1 {
-  font-size: 24px;
-  color: #303133;
-  margin-bottom: 16px;
-}
-
-p {
-  font-size: 16px;
-  color: #909399;
+.grid-item.wide {
+  grid-column: span 3;
 }
 </style>

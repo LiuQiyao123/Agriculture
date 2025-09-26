@@ -22,29 +22,28 @@ const routes = [
         redirect: '/intelligent-analysis/crop-growth',
         meta: { title: '智能分析决策' },
         children: [
-          // [NEW] 新增模块，并按新命名和排序更新
-          { path: 'weather-alert', name: 'WeatherAlert', component: () => import('@/views/analysis/WeatherAlert.vue'), meta: { title: '农业气象预警' } },
-          { path: 'land-use', name: 'LandUseEvaluation', component: () => import('@/views/analysis/LandUseAnalysis.vue'), meta: { title: '地块利用评估' } },
-          { path: 'land-degredation', name: 'LandDegradationEvaluation', component: () => import('@/views/analysis/LandDegradationAnalysis.vue'), meta: { title: '地力退化评估' } },
-          { path: 'soil-health', name: 'SoilHealthDiagnosis', component: () => import('@/views/analysis/SoilHealthAnalysis.vue'), meta: { title: '土壤健康诊断' } },
-          { path: 'moisture', name: 'MoistureMonitor', component: () => import('@/views/analysis/MoistureAnalysis.vue'), meta: { title: '土壤墒情监测' } },
-          { path: 'crop-growth', name: 'CropGrowthDiagnosis', component: () => import('@/views/analysis/CropGrowthAnalysis.vue'), meta: { title: '作物长势诊断' } },
+          { path: 'crop-growth', name: 'CropGrowthAnalysis', component: () => import('@/views/analysis/CropGrowthAnalysis.vue'), meta: { title: '作物长势分析' } },
+          { path: 'soil-quality', name: 'SoilQualityAnalysis', component: () => import('@/views/analysis/SoilQualityAnalysis.vue'), meta: { title: '土壤健康诊断' } },
+          { path: 'land-use', name: 'LandUseAnalysis', component: () => import('@/views/analysis/LandUseAnalysis.vue'), meta: { title: '地块利用评估' } },
+          { path: 'land-degradation', name: 'LandDegradationAnalysis', component: () => import('@/views/analysis/LandDegradationAnalysis.vue'), meta: { title: '土地退化监测' } },
+          { path: 'moisture', name: 'MoistureAnalysis', component: () => import('@/views/analysis/MoistureAnalysis.vue'), meta: { title: '土壤墒情监测' } },
+          { path: 'pest-prediction', name: 'PestPrediction', component: () => import('@/views/analysis/PestPrediction.vue'), meta: { title: '病虫害风险预警' } },
           { path: 'yield-prediction', name: 'YieldPrediction', component: () => import('@/views/analysis/YieldPrediction.vue'), meta: { title: '作物产量预测' } },
-          { path: 'pest-risk', name: 'PestRiskWarning', component: () => import('@/views/analysis/PestPrediction.vue'), meta: { title: '病虫害风险预警' } },
+          { path: 'weather-alert', name: 'WeatherAlert', component: () => import('@/views/analysis/WeatherAlert.vue'), meta: { title: '农业气象预警' } },
         ]
       },
-      // 模块三: 智慧农事管理 (新增)
       {
-        path: 'farm-management',
-        name: 'SmartFarmManagement',
+        // 模块三: 智慧农事管理 (新增)
+        path: 'farm',
+        name: 'FarmManagement',
         component: () => import('@/components/RouterOutlet.vue'),
-        redirect: '/farm-management/plots',
+        redirect: { name: 'PlotManagement' },
         meta: { title: '智慧农事管理' },
         children: [
           { path: 'plots', name: 'PlotManagement', component: () => import('@/views/farm/PlotManagement.vue'), meta: { title: '地块管理' } },
           { path: 'plans', name: 'PlantingPlan', component: () => import('@/views/farm/PlantingPlan.vue'), meta: { title: '种植规划' } },
-          { path: 'tasks', name: 'TaskKanban', component: () => import('@/views/farm/TaskKanban.vue'), meta: { title: '任务看板' } },
-          { path: 'harvesting', name: 'HarvestManagement', component: () => import('@/views/farm/HarvestManagement.vue'), meta: { title: '采收任务管理' } },
+          { path: 'tasks', name: 'TaskKanban', component: () => import('@/views/farm/TaskKanban.vue'), meta: { title: '任务管理' } },
+          { path: 'harvesting', name: 'HarvestManagement', component: () => import('@/views/farm/HarvestManagement.vue'), meta: { title: '采收管理' } },
           { path: 'alerts', name: 'AlertCenter', component: () => import('@/views/farm/AlertCenter.vue'), meta: { title: '农事预警中心' } },
           { path: 'statistics', name: 'DataStatistics', component: () => import('@/views/farm/DataStatistics.vue'), meta: { title: '数据统计分析' } },
         ]

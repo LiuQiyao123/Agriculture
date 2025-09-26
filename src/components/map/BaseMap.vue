@@ -1,11 +1,13 @@
 <template>
-  <div ref="mapContainer" class="base-map-container"></div>
+  <div ref="mapContainer" class="basemap-container"></div>
 </template>
 
 <script setup>
-import { shallowRef, ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import MapboxDraw from '@mapbox/mapbox-gl-draw';
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import * as pmtiles from 'pmtiles';
 
 // Initialize PMTiles protocol
@@ -16,13 +18,22 @@ const props = defineProps({
   layers: {
     type: Object,
     default: () => ({})
+  },
+  drawControls: {
+    type: Boolean,
+    default: false,
+  },
+  drawOptions: {
+    type: Object,
+    default: () => ({}),
   }
 });
 
-const emit = defineEmits(['map-loaded', 'feature-clicked']);
+const emit = defineEmits(['map-load', 'feature-clicked', 'draw-create', 'draw-update', 'draw-delete']);
 
-const mapContainer = shallowRef(null);
-const map = shallowRef(null);
+const mapContainer = ref(null);
+let map = ref(null);
+let draw = ref(null);
 
 const initializeMap = () => {
   if (!mapContainer.value) return;
@@ -47,31 +58,56 @@ const initializeMap = () => {
 
   map.value.on('load', () => {
     updateLayers(props.layers);
-    emit('map-loaded', map.value);
+    emit('map-load', map.value);
+    
+    if (props.drawControls) {
+      initializeDraw();
+    }
   });
 };
 
-const updateLayers = (newLayers) => {
+const updateLayers = (newLayers, prevLayers = {}) => {
   if (!map.value || !map.value.isStyleLoaded()) return;
 
-  const currentSources = map.value.getStyle().sources;
-  const currentLayers = map.value.getStyle().layers.map(l => l.id);
+  const currentSourceIds = Object.keys(map.value.getStyle().sources);
+  const currentLayerIds = map.value.getStyle().layers.map(l => l.id);
+
+  // Remove layers that are no longer in props
+  Object.keys(prevLayers).forEach(layerId => {
+    if (!newLayers[layerId]) {
+      if (currentLayerIds.includes(layerId)) {
+        map.value.removeLayer(layerId);
+      }
+      if (currentSourceIds.includes(layerId)) {
+        map.value.removeSource(layerId);
+      }
+    }
+  });
 
   Object.keys(newLayers).forEach(layerId => {
     const layerConfig = newLayers[layerId];
-    if (!layerConfig || !layerConfig.data) return;
+    if (!layerConfig || !layerConfig.data || !layerConfig.data.features) return;
 
-    if (!currentSources[layerId]) {
+    const source = map.value.getSource(layerId);
+    if (source) {
+      source.setData(layerConfig.data);
+    } else {
       map.value.addSource(layerId, {
         type: 'geojson',
         data: layerConfig.data,
         ...layerConfig.sourceOptions,
       });
-    } else {
-      map.value.getSource(layerId).setData(layerConfig.data);
     }
     
-    if (!currentLayers.includes(layerId)) {
+    const existingLayer = map.value.getLayer(layerId);
+    if (existingLayer) {
+      // If layer exists, just update its paint properties
+      if (layerConfig.paint) {
+        Object.keys(layerConfig.paint).forEach(paintProperty => {
+          map.value.setPaintProperty(layerId, paintProperty, layerConfig.paint[paintProperty]);
+        });
+      }
+    } else {
       map.value.addLayer({
         id: layerId,
         source: layerId,
@@ -85,15 +121,55 @@ const updateLayers = (newLayers) => {
           emit('feature-clicked', { layerId, feature: e.features[0], lngLat: e.lngLat });
         }
       });
-       map.value.on('mouseenter', layerId, () => map.value.getCanvas().style.cursor = 'pointer');
-       map.value.on('mouseleave', layerId, () => map.value.getCanvas().style.cursor = '');
+      map.value.on('mouseenter', layerId, () => map.value.getCanvas().style.cursor = 'pointer');
+      map.value.on('mouseleave', layerId, () => map.value.getCanvas().style.cursor = '');
     }
   });
 };
 
+const initializeDraw = () => {
+  if (draw.value) return; // aleeady initialized
 
-watch(() => props.layers, (newVal) => {
-  updateLayers(newVal);
+  const defaultDrawOptions = {
+    displayControlsDefault: false,
+    controls: {
+      polygon: true,
+      trash: true,
+    },
+    ...props.drawOptions,
+  };
+
+  draw.value = new MapboxDraw(defaultDrawOptions);
+  map.value.addControl(draw.value, 'top-right');
+
+  map.value.on('draw.create', (e) => emit('draw-create', e));
+  map.value.on('draw.update', (e) => emit('draw-update', e));
+  map.value.on('draw.delete', (e) => emit('draw-delete', e));
+};
+
+const removeDraw = () => {
+  if (draw.value && map.value) {
+    map.value.removeControl(draw.value);
+    draw.value = null;
+  }
+};
+
+watch(() => props.drawControls, (newVal) => {
+  if (map.value && map.value.isStyleLoaded()) {
+    if (newVal) {
+      initializeDraw();
+    } else {
+      removeDraw();
+    }
+  }
+});
+
+watch(() => props.layers, (newVal, oldVal) => {
+  if (map.value && map.value.isStyleLoaded()) {
+    updateLayers(newVal, oldVal);
+  } else if (map.value) {
+    map.value.once('load', () => updateLayers(newVal, oldVal));
+  }
 }, { deep: true });
 
 onMounted(initializeMap);
@@ -111,13 +187,14 @@ const flyTo = (options) => {
 
 defineExpose({
   map,
-  flyTo
+  flyTo,
+  draw,
 });
 
 </script>
 
 <style scoped>
-.base-map-container {
+.basemap-container {
   width: 100%;
   height: 100%;
 }

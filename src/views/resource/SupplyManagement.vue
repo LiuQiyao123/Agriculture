@@ -1,3 +1,4 @@
+
 <template>
   <div class="placeholder-page">
     <h1>农资库存管理</h1>
@@ -34,3 +35,5 @@ p {
   color: #909399;
 }
 </style>
+
+

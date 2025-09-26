@@ -510,28 +510,9 @@ const initializeMap = () => {
     // The base map style now contains all necessary layers.
     // We only need to add our application-specific sources and layers here.
     
-    // Add analysis-specific sources ONLY if layer control is shown
-    if (props.showLayerControl) {
-      // Add NDVI Tile Layer Source and Layer Definition
-      map.value.addSource('ndvi-source', {
-        type: 'raster',
-        tiles: ['/tiles/ndvi/{z}/{x}/{y}.png'], // Assumes tiles are in /public/tiles/
-        tileSize: 256,
-        attribution: 'NDVI data source'
-      });
-
-      map.value.addLayer({
-        id: 'ndvi-tiles',
-        type: 'raster',
-        source: 'ndvi-source',
-        paint: {
-          'raster-opacity': 0.6
-        },
-        layout: {
-          visibility: 'none' // Initially hidden
-        }
-      });
-    }
+    // Note: Raster layers (ndvi-tiles, soil-moisture, etc.) are implemented 
+    // through plot color changes, not actual raster tiles.
+    // The data visualization is handled by updatePlotColors() function.
 
     updateMapData();
   });
@@ -918,10 +899,6 @@ const flyTo = (options) => {
   if (map.value) map.value.flyTo(options);
 };
 
-defineExpose({
-  flyTo,
-});
-
 const showPlotPopup = (properties, lngLat) => {
   const popupContainer = createPopupComponent({ title: properties.name || '地块详情' });
   const content = document.createElement('ul');
@@ -958,6 +935,15 @@ const setLayerVisibility = (layerKey, visible) => {
   const config = allLayersConfig[layerKey];
   if (!config) return;
 
+  // 同步activeLayers状态
+  if (visible) {
+    if (!activeLayers.value.includes(layerKey)) {
+      activeLayers.value.push(layerKey);
+    }
+  } else {
+    activeLayers.value = activeLayers.value.filter(l => l !== layerKey);
+  }
+
   switch (config.type) {
     case 'geojson':
       if (layerKey === 'plots') {
@@ -972,7 +958,18 @@ const setLayerVisibility = (layerKey, visible) => {
       visible ? addMarkers() : clearMarkers();
       break;
     case 'raster':
-      if (map.value.getLayer(config.id)) map.value.setLayoutProperty(config.id, 'visibility', visible ? 'visible' : 'none');
+      // 对于raster类型的图层，通过地块颜色变化来实现
+      if (visible) {
+        // 显示图层：更新地块颜色
+        if (timeAxisLayers.includes(layerKey)) {
+          updatePlotColors(layerKey, selectedDate.value);
+        }
+      } else {
+        // 隐藏图层：重置地块颜色
+        if (timeAxisLayers.includes(layerKey)) {
+          resetPlotColors();
+        }
+      }
       break;
     // Add other layer types here
   }
@@ -1039,6 +1036,12 @@ const resetPlotColors = () => {
   
   map.value.getSource('plots').setData(resetData);
 };
+
+defineExpose({
+  flyTo,
+  toggleLayer,
+  setLayerVisibility,
+});
 
 // This function is no longer needed as toggleLayer handles markers
 // const toggleSensorLayer = () => {

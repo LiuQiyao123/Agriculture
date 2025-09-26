@@ -1,139 +1,190 @@
-import { ref, computed, watch, nextTick } from 'vue';
-import { getProcessedGeoJSON } from '@/services/MapService.js';
-import originalPlots from '@/mock/shandong-plots.json';
+import { ref, computed, watch } from 'vue';
+import shandongPlots from '@/mock/shandong-plots.json';
 
-function getPolygonCenter(coordinates) {
-  if (!coordinates || !coordinates[0] || coordinates[0].length === 0) {
-    return [118.5, 36.5];
-  }
-  const coords = coordinates[0];
-  let minLng = coords[0][0], maxLng = coords[0][0], minLat = coords[0][1], maxLat = coords[0][1];
-  for (const [lng, lat] of coords) {
-    if (lng < minLng) minLng = lng;
-    if (lng > maxLng) maxLng = lng;
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
-  }
-  return [(minLng + maxLng) / 2, (minLat + maxLat) / 2];
-}
+function generateComprehensivePestAdvice(plotData) {
+  const { plotId, pestType, probability, riskLevel, monitoringTime } = plotData;
 
-export function usePestPredictionData(gisMapRef, tableRef) {
-  const currentRow = ref(null);
-
-  const processedPlots = computed(() => {
-    return getProcessedGeoJSON(originalPlots, 'pest-disease');
-  });
-
-  const filters = ref({
-    riskLevel: '',
-    pestType: '',
-  });
-
-  const filterFields = ref([
-    {
-      type: 'select',
-      model: 'riskLevel',
-      label: '风险等级',
-      placeholder: '请选择等级',
-      options: [
-        { label: '高', value: '高' },
-        { label: '中', value: '中' },
-        { label: '低', value: '低' },
-      ],
+  const healthModel = {
+    scores: {
+      pest: {
+        score: riskLevel === '高风险' ? 0.2 : riskLevel === '中风险' ? 0.5 : 1.0,
+        reasoning: `主要风险: ${pestType}(${riskLevel})`
+      },
+      environment: { score: 0.7, reasoning: '环境湿度偏高，利于病害。' },
+      cropResilience: { score: 0.8, reasoning: '作物品种抗性较好。' },
+      prevention: { score: 0.6, reasoning: '历史防治措施一般。' }
     },
-    {
-      type: 'input',
-      model: 'pestType',
-      label: '害虫种类',
-      placeholder: '请输入害虫名称',
-    },
-  ]);
+    compositeScore: 0,
+  };
+  healthModel.compositeScore = (healthModel.scores.pest.score * 0.6 + healthModel.scores.environment.score * 0.2 + healthModel.scores.cropResilience.score * 0.1 + healthModel.scores.prevention.score * 0.1) * 100;
 
-  const suggestionContent = computed(() => {
-    if (!currentRow.value) {
-      return { metrics: [], sections: [{ title: 'AI 精准防治方案', paragraph: '请在下方列表中选择一个地块以查看建议。' }] };
-    }
-    
-    const suggestions = {
-        '高': [
-            '生物防治：于傍晚释放赤眼蜂，每亩 1.5万 - 2万头。',
-            '物理防治：安装杀虫灯，每 30-50 亩一盏。',
-            '化学防治：若虫口密度超过阈值，使用 5% 甲维盐水分散粒剂 2000-3000 倍液喷雾。',
-        ],
-        '中': [
-            '生物防治：释放天敌，如瓢虫、草蛉等。',
-            '物理防治：黄板诱杀，每亩 20-30 块。',
-        ],
-        '低': ['加强田间监测，暂不需特殊防治。']
+  const diagnosis = {
+    kpis: {
+      riskLevel: { value: { '高风险': 3, '中风险': 2, '低风险': 1 }[riskLevel], trend: 0.5, optimal: 1, status: riskLevel },
+      probability: { value: parseFloat(probability), trend: 0.1, optimal: 0, status: '关注' },
+    },
+    summary: ``,
+    risks: [],
+  };
+
+  if (riskLevel !== '低风险') {
+    diagnosis.risks.push(`[${riskLevel}] 已达到防治指标，如不干预，预计在3-5天内会大面积爆发。`);
+  }
+  diagnosis.summary = `AI病虫害风险综合指数评定为 ${healthModel.compositeScore.toFixed(0)} 分。当前主要风险为“${pestType}”，等级“${riskLevel}”。`;
+
+  let controlTask = null;
+  if (riskLevel !== '低风险') {
+    controlTask = {
+      type: riskLevel === '高风险' ? '紧急防治' : '预防性防治',
+      method: '无人机精准喷洒',
+      pesticide: pestType === '稻瘟病' ? '三环唑' : (pestType === '玉米螟' ? '甲维盐' : '通用杀菌剂'),
     };
+  }
 
-    return {
-      metrics: [
-        { label: '发生概率', value: `${currentRow.value.riskLevel === '高' ? '85' : currentRow.value.riskLevel === '中' ? '60' : '30'}%`, class: 'danger' },
-        { label: '防治窗口', value: '10-28 至 11-03' }
-      ],
-      sections: [
-        {
-          title: `地块：${currentRow.value.region} (${currentRow.value.pestType})`,
-          list: suggestions[currentRow.value.riskLevel] || ['暂无具体建议。']
-        },
-        {
-          title: '注意事项',
-          paragraph: '避免在高温时段施药，注意个人防护。'
-        }
-      ]
-    }
-  });
-
-  const tableData = ref([
-    { id: 1, region: '历下区', plotId: 'A-01', pestType: '玉米螟', riskLevel: '高', prediction: '7天后进入高发期', area: '150亩' },
-    { id: 2, region: '市南区', plotId: 'B-02', pestType: '稻飞虱', riskLevel: '中', prediction: '10天后可能爆发', area: '320亩' },
-    { id: 3, region: '张店区', plotId: 'C-03', pestType: '棉铃虫', riskLevel: '低', prediction: '无明显爆发迹象', area: '500亩' },
-    { id: 4, region: '市中区', plotId: 'D-04', pestType: '蚜虫', riskLevel: '高', prediction: '5天后密度将达防治阈值', area: '80亩' },
-    { id: 5, region: '东营区', plotId: 'E-05', pestType: '红蜘蛛', riskLevel: '中', prediction: '环境湿度降低，利于其繁殖', area: '240亩' },
-  ]);
-
-  const filteredTableData = computed(() => {
-    // Filtering logic can be re-enabled here if needed
-    return tableData.value;
-  });
-  
-  const handleCurrentChange = (val) => {
-    if (!val) return;
-    currentRow.value = val;
-
-    const feature = originalPlots.features.find(f => f.properties.name === val.plotId);
-    if (feature && gisMapRef.value && typeof gisMapRef.value.flyTo === 'function') {
-      const center = getPolygonCenter(feature.geometry.coordinates);
-      gisMapRef.value.flyTo({
-        center: center,
-        zoom: 12,
-        pitch: 60,
-        bearing: -20,
-        duration: 2000,
-      });
+  const advice = {
+    overview: {
+      plotId,
+      targetCrop: pestType,
+      coreTask: riskLevel !== '低风险' ? `控制 ${pestType}` : '维持低风险状态',
+      executionWindow: riskLevel === '高风险' ? '立即执行' : '未来3天内',
+      priority: riskLevel,
+    },
+    controlTask,
+    decisionBasis: diagnosis.risks,
+    costBenefit: {
+      estimatedCost: (controlTask ? 180 : 30).toFixed(2),
+      expectedBenefits: controlTask ? '预计挽回产量损失10%-20%。' : '维持健康生长，降低未来防治成本。',
     }
   };
 
-  watch(tableRef, (newTableRef) => {
-    if (newTableRef && filteredTableData.value.length > 0) {
-      const firstRow = filteredTableData.value[0];
-      if (typeof newTableRef.setCurrentRow === 'function') {
-        nextTick(() => {
-          newTableRef.setCurrentRow(firstRow);
-          handleCurrentChange(firstRow);
-        });
+  return { diagnosis, advice, healthModel };
+}
+
+export function usePestPredictionData(baseMapRef, tableRef) {
+  const tableData = ref([
+    { plotId: '地块A01', pestType: '稻瘟病', riskLevel: '高风险', probability: '85%', monitoringTime: '2025-09-22 10:00' },
+    { plotId: '地块B02', pestType: '玉米螟', riskLevel: '中风险', probability: '60%', monitoringTime: '2025-09-22 11:30' },
+    { plotId: '地块C03', pestType: '白粉病', riskLevel: '低风险', probability: '25%', monitoringTime: '2025-09-22 09:45' },
+    { plotId: '地块D04', pestType: '稻瘟病', riskLevel: '中风险', probability: '55%', monitoringTime: '2025-09-22 14:00' },
+    { plotId: '地块E05', pestType: '锈病', riskLevel: '低风险', probability: '20%', monitoringTime: '2025-09-22 12:10' },
+  ].map(item => ({ ...item, ...generateComprehensivePestAdvice(item) })));
+  
+  const currentRow = ref(null);
+  const filters = ref({ riskLevel: '', pestType: '' });
+  const filterFields = ref([
+      { type: 'select', label: '风险等级', model: 'riskLevel', options: ['全部', '高风险', '中风险', '低风险'] },
+      { type: 'select', label: '病虫害类型', model: 'pestType', options: ['全部', '稻瘟病', '玉米螟', '白粉病', '锈病'] },
+  ]);
+
+  const handleCurrentChange = (row) => {
+    if (row) {
+      currentRow.value = row;
+      if (baseMapRef.value) {
+        const plotFeature = processedPlots.value.features.find(f => f.properties.plotId === row.plotId);
+        if (plotFeature && plotFeature.properties.center) {
+          baseMapRef.value.flyTo({ center: plotFeature.properties.center, zoom: 14 });
+        }
       }
+    }
+  };
+
+  const diagnosisContent = computed(() => currentRow.value?.diagnosis);
+  const suggestionContent = computed(() => currentRow.value?.advice);
+
+  const processedPlots = computed(() => {
+    return {
+      type: 'FeatureCollection',
+      features: shandongPlots.features.map(feature => {
+        const plotData = tableData.value.find(d => d.plotId.includes(feature.properties.id.slice(-2))) || {};
+        return { ...feature, properties: { ...feature.properties, ...plotData } };
+      }),
+    };
+  });
+  
+  watch(tableRef, (newTableRef) => {
+    if (newTableRef && tableData.value.length > 0) {
+      const firstRow = tableData.value[0];
+      newTableRef.setCurrentRow(firstRow);
+      handleCurrentChange(firstRow);
     }
   }, { once: true });
 
+  const riskPieChartOptions = computed(() => {
+    const riskCounts = tableData.value.reduce((acc, item) => {
+      acc[item.riskLevel] = (acc[item.riskLevel] || 0) + 1;
+      return acc;
+    }, {});
+    const chartData = Object.entries(riskCounts).map(([name, value]) => ({ name, value }));
+    return {
+        title: { text: '病虫害风险等级分布', left: 'center', textStyle: { color: '#fff' }},
+        tooltip: { trigger: 'item', formatter: '{b} : {c} ({d}%)' },
+        legend: {
+            orient: 'vertical',
+            left: 'left',
+            top: 'middle',
+            textStyle: { color: '#fff' }
+        },
+        series: [{ 
+            name: '风险等级',
+            type: 'pie',
+            radius: ['50%', '70%'],
+            center: ['65%', '50%'],
+            avoidLabelOverlap: false,
+            label: {
+                show: false,
+                position: 'center'
+            },
+            emphasis: {
+                label: {
+                    show: true,
+                    fontSize: '20',
+                    fontWeight: 'bold',
+                    color: '#fff'
+                }
+            },
+            labelLine: {
+                show: false
+            },
+            data: chartData,
+            itemStyle: {
+              borderColor: '#1e243b',
+              borderWidth: 2
+            }
+        }]
+    };
+  });
+  
+  const pestTypeBarChartOptions = computed(() => {
+    const typeCounts = tableData.value.reduce((acc, item) => {
+      acc[item.pestType] = (acc[item.pestType] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+        title: { text: '主要病虫害类型分布', left: 'center', textStyle: { color: '#fff' }},
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+        xAxis: { 
+            type: 'category', 
+            data: Object.keys(typeCounts), 
+            axisLabel: { color: '#fff', rotate: 30 },
+        },
+        yAxis: { 
+            type: 'value', 
+            axisLabel: { color: '#fff' },
+            splitLine: { lineStyle: { color: '#333' } }
+        },
+        series: [{ 
+            name: '地块数量',
+            type: 'bar', 
+            data: Object.values(typeCounts),
+            itemStyle: { color: '#c23531' }
+        }]
+    };
+  });
+
   return {
-    processedPlots,
-    filters,
-    filterFields,
-    filteredTableData,
-    handleCurrentChange,
-    suggestionContent,
-    currentRow,
+    tableData, filterFields, filters, processedPlots,
+    handleCurrentChange, currentRow, diagnosisContent, suggestionContent,
+    riskPieChartOptions, pestTypeBarChartOptions,
   };
 }

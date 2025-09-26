@@ -1,3 +1,4 @@
+
 <template>
   <div class="manual-report-container">
     <DataPanel title="人工上报管理">
@@ -921,5 +922,7 @@ onMounted(() => {
   }
 }
 </style>
+
+
 
 

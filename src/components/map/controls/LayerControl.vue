@@ -69,12 +69,15 @@ watch(activeLayers, (newActive, oldActive) => {
   border-radius: 8px;
   padding: 15px 20px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
-  max-width: 80%;
+  min-width: max-content;
+  max-width: 95vw;
   z-index: 10;
   border: 1px solid rgba(0, 170, 255, 0.5);
   box-shadow: 0 0 12px rgba(0, 170, 255, 0.3);
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .layer-control-btn {
