@@ -2,12 +2,29 @@
 
 .page-container {
   height: 100%;
-  display: flex;
-  flex-direction: column;
   padding: 20px;
 }
 
+.page-container.page-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: auto auto 1fr 1fr;
+  grid-template-areas:
+    "title title"
+    "filter filter"
+    "map sidebar"
+    "table sidebar";
+  gap: 16px;
+}
+
+@media (max-width: 1280px) {
+  .page-container.page-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .page-title {
+  grid-area: title;
   color: theme.$title-color;
   font-size: 20px;
   font-weight: bold;
@@ -16,6 +33,7 @@
 }
 
 .filter-bar {
+  grid-area: filter;
   background: rgba(10, 29, 61, 0.85);
   border: 1px solid rgba(0,170,255,.3);
   border-radius: 8px;
@@ -34,14 +52,7 @@
   min-height: 0;
 }
 
-.main-content-grid {
-  flex-grow: 1;
-  min-height: 0;
-  display: grid;
-  gap: 20px;
-  grid-template-columns: 7fr 3fr; /* ~70/30 split */
-  grid-template-areas: "main sidebar";
-}
+/* 主内容栅格由全局 .page-grid 控制，此处不再设置 70/30 */
 
 .grid-main {
   grid-area: main;
@@ -52,11 +63,13 @@
 }
 
 .grid-map {
+  grid-area: map;
   flex: 1 1 50%;
   min-height: 400px;
 }
 
 .grid-table {
+   grid-area: table;
    flex: 1 1 50%;
    min-height: 300px;
    height: auto; /* Override fixed height */

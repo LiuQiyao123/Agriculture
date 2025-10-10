@@ -18,11 +18,13 @@
         </div>
       </div>
     </div>
+    <AnalysisExplanation v-if="explanation" :explanation="explanation" />
   </DataPanel>
 </template>
 
 <script setup>
 import DataPanel from '@/components/DataPanel.vue';
+import AnalysisExplanation from '@/components/AnalysisExplanation.vue';
 
 defineProps({
   title: {
@@ -37,6 +39,10 @@ defineProps({
       sections: [],
     }),
   },
+  explanation: {
+    type: String,
+    default: ''
+  }
 });
 </script>
 

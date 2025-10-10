@@ -18,7 +18,7 @@
     
     <template #ai-panels>
       <DataPanel title="AI智能分析">
-        <AIPanel :content="aiAnalysisContent" />
+        <AIPanel :content="aiAnalysisContent" :explanation="analysisExplanation" />
       </DataPanel>
       <DataPanel title="地力退化程度分布图">
         <EchartsWrapper :options="pieChartOptions" height="300px" />
@@ -86,7 +86,8 @@ const {
   filterFields,
   filteredTableData,
   handleCurrentChange,
-  aiAnalysisContent
+  aiAnalysisContent,
+  analysisExplanation
 } = useLandDegradationData(baseMapRef, tableRef);
 
 

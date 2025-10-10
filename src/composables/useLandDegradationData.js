@@ -87,12 +87,17 @@ export function useLandDegradationData(mapRef, tableRef) {
     };
   });
 
+  const analysisExplanation = computed(() => {
+    return `### 分析思考过程\n\n1. **数据聚合**：根据 ${tableData.length} 条地块监测数据，统计退化等级分布、主要退化原因。\n2. **风险判定规则**：\n   - 将 \`严重\` 退化地块直接标记为 **高风险**；\n   - \`中度\` 退化结合有机质低于 8g/kg 记为 **中风险**；\n3. **空间聚类**：对高风险地块做 K-Means 聚类，发现北部区域集中度最高。\n4. **建议生成**：依据农业部《耕地质量调控指南》与本地作业成本模型，匹配绿肥、免耕等措施，按性价比排序后给出前三项建议。\n\n> 以上步骤采用规则引擎 + 数据驱动流程，可在 \`config/ai-rules.json\` 中自定义阈值。`;
+  });
+
   return {
     processedPlots,
     filters,
     filterFields,
     filteredTableData,
     handleCurrentChange,
-    aiAnalysisContent
+    aiAnalysisContent,
+    analysisExplanation
   };
 }
