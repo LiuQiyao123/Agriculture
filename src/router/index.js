@@ -53,7 +53,7 @@ const routes = [
         path: 'resource-management',
         name: 'ResourceManagement',
         component: () => import('@/components/RouterOutlet.vue'),
-        redirect: '/resource-management/machinery',
+        redirect: '/resource-management/supplies',
         meta: { title: '农资管理' },
         children: [
           { path: 'machinery', name: 'MachineryDispatch', component: () => import('@/views/resource/MachineryDispatch.vue'), meta: { title: '农机调度' } },

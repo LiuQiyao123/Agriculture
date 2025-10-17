@@ -15,7 +15,7 @@
         @row-click="handleRowClick"
         row-class-name="alert-row"
       >
-        <el-table-column prop="type" label="类型" width="100">
+        <el-table-column prop="type" label="类型">
           <template #default="{ row }">
             <el-tag :type="getTypeTagType(row.type)" size="small">
               {{ getTypeLabel(row.type) }}
@@ -23,7 +23,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="title" label="预警标题" min-width="200">
+        <el-table-column prop="title" label="预警标题" min-width="250">
           <template #default="{ row }">
             <div class="alert-title">
               <el-icon v-if="row.isRead === false" class="unread-icon">
@@ -34,7 +34,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="severity" label="严重程度" width="100">
+        <el-table-column prop="severity" label="严重程度">
           <template #default="{ row }">
             <el-tag :type="getSeverityTagType(row.severity)" size="small">
               {{ getSeverityLabel(row.severity) }}
@@ -42,9 +42,9 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="plotName" label="关联地块" width="120" />
+        <el-table-column prop="plotName" label="关联地块" min-width="120" />
 
-        <el-table-column prop="createTime" label="创建时间" width="160">
+        <el-table-column prop="createTime" label="创建时间" min-width="160">
           <template #default="{ row }">
             {{ formatDateTime(row.createTime) }}
           </template>
@@ -58,7 +58,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right" align="left">
           <template #default="{ row }">
             <el-button
               type="primary"

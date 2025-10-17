@@ -68,8 +68,6 @@ const handleRoleSelect = async (role) => {
 </script>
 
 <style lang="scss" scoped>
-@use '@/styles/theme.scss' as theme;
-
 .system-management-container {
   padding: 10px;
   height: 100%;

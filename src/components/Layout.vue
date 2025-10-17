@@ -125,15 +125,13 @@ const handleNotificationClick = (path) => {
 </script>
 
 <style lang="scss" scoped>
-@use '@/styles/theme.scss' as theme;
-
 .app-layout {
   height: 100vh;
 }
 
 .app-header {
-  background-color: theme.$left-menu-bg;
-  border-bottom: 1px solid theme.$border-color;
+  background-color: $left-menu-bg;
+  border-bottom: 1px solid $border-color;
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -152,7 +150,7 @@ const handleNotificationClick = (path) => {
 }
 
 .header-title {
-  color: theme.$title-color;
+  color: $title-color;
   font-size: 24px;
   font-weight: bold;
 }
@@ -165,18 +163,18 @@ const handleNotificationClick = (path) => {
   margin-left: 50px; // Add space between title and menu
 
   .el-menu-item {
-    color: theme.$left-menu-text-color;
+    color: $left-menu-text-color;
     font-size: 16px;
     border-bottom: 3px solid transparent;
     transition: all 0.2s ease;
     
     &:hover {
-      background-color: theme.$left-menu-active-bg;
+      background-color: $left-menu-active-bg;
       color: #fff;
     }
     &.is-active {
-      color: theme.$left-menu-active-text-color;
-      border-bottom-color: theme.$primary-accent-color;
+      color: $left-menu-active-text-color;
+      border-bottom-color: $primary-accent-color;
       background-color: transparent;
     }
   }
@@ -187,24 +185,24 @@ const handleNotificationClick = (path) => {
     line-height: 60px; // Match header height
   }
   .el-sub-menu .el-menu-item {
-    background-color: theme.$left-menu-bg;
-    color: theme.$left-menu-text-color;
+    background-color: $left-menu-bg;
+    color: $left-menu-text-color;
     font-size: 16px; // 添加字体大小，与一级菜单保持一致
     
     &:hover {
-      background-color: theme.$left-menu-active-bg;
+      background-color: $left-menu-active-bg;
       color: #fff;
     }
     
     &.is-active {
-      background-color: theme.$left-menu-active-bg;
-      color: theme.$left-menu-active-text-color;
+      background-color: $left-menu-active-bg;
+      color: $left-menu-active-text-color;
     }
   }
 }
 
 .el-dropdown-link {
-  color: theme.$left-menu-text-color;
+  color: $left-menu-text-color;
   font-size: 16px;
   border-bottom: 3px solid transparent;
   transition: all 0.2s ease;
@@ -244,6 +242,6 @@ const handleNotificationClick = (path) => {
 
 .el-dropdown-link.is-active,
 .el-dropdown-link:hover {
-  color: theme.$primary-accent-color;
+  color: $primary-accent-color;
 }
 </style> 

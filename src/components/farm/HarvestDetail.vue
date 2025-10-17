@@ -1,3 +1,4 @@
+<!-- UNUSED: 未被任何视图/组件引用 -->
 <template>
   <div class="harvest-detail" v-if="harvest">
     <div class="detail-header">

@@ -95,7 +95,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="town" label="乡镇" width="110" />
-          <el-table-column label="操作" width="120" fixed="right">
+          <el-table-column label="操作" width="120" fixed="right" align="left">
             <template #default="scope">
               <el-button size="small" type="primary" @click.stop="showDeviceDetails(scope.row)">
                 详情
@@ -336,8 +336,6 @@ const formatDateTime = (dateTime) => {
 </script>
 
 <style lang="scss" scoped>
-@use '@/styles/theme.scss' as theme;
-
 .data-center-container {
   padding: 10px;
   height: 100%;

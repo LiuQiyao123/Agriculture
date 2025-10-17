@@ -1,3 +1,4 @@
+<!-- UNUSED: 未被任何视图/组件引用 -->
 <template>
   <div class="task-gantt">
     <div class="gantt-header">

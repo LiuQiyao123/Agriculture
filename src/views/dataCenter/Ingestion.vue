@@ -96,7 +96,7 @@
           <el-table-column prop="startTime" label="开始时间" width="180" />
           <el-table-column prop="endTime" label="结束时间" width="180" />
           <el-table-column prop="dataCount" label="数据量" width="100" />
-          <el-table-column label="操作" width="260" fixed="right">
+          <el-table-column label="操作" width="260" fixed="right" align="left">
             <template #default="scope">
               <el-button size="small" @click="handleTaskDetail(scope.row)">详情</el-button>
               <el-button 
@@ -172,7 +172,7 @@
           <el-table-column prop="completeness" label="完整性" width="80" />
           <el-table-column prop="consistency" label="一致性" width="80" />
           <el-table-column prop="issues" label="主要问题" min-width="200" show-overflow-tooltip />
-          <el-table-column label="操作" width="160" fixed="right">
+          <el-table-column label="操作" width="160" fixed="right" align="left">
             <template #default="scope">
               <el-button size="small" @click="handleQualityDetail(scope.row)">详情</el-button>
             </template>
@@ -221,7 +221,7 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="260" fixed="right">
+          <el-table-column label="操作" width="260" fixed="right" align="left">
             <template #default="scope">
               <el-button size="small" @click="handleDatasetDetail(scope.row)">详情</el-button>
               <el-button size="small" type="primary" @click="handleDatasetDownload(scope.row)">下载</el-button>

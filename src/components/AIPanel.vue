@@ -47,8 +47,6 @@ defineProps({
 </script>
 
 <style scoped lang="scss">
-@use '@/styles/theme.scss' as theme;
-
 .ai-panel-content {
   padding: 15px 20px;
   height: 100%;
@@ -65,7 +63,7 @@ defineProps({
 }
 
 .model-metric {
-  color: theme.$text-color-secondary;
+  color: $text-color-secondary;
   font-size: 14px;
   display: flex;
   justify-content: space-between;
@@ -74,7 +72,7 @@ defineProps({
   .value {
     font-weight: bold;
     font-size: 16px;
-    color: theme.$title-color;
+    color: $title-color;
     &.success {
       color: #67c23a;
     }
@@ -93,15 +91,15 @@ defineProps({
 
 .content-section {
   h4 {
-    color: theme.$title-color;
+    color: $title-color;
     font-size: 15px;
     margin: 0 0 8px 0;
-    border-left: 3px solid theme.$primary-accent-color;
+    border-left: 3px solid $primary-accent-color;
     padding-left: 8px;
   }
 
   p, ul {
-    color: theme.$text-color-secondary;
+    color: $text-color-secondary;
     font-size: 14px;
     line-height: 1.6;
     margin: 0;

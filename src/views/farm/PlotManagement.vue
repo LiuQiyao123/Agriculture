@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <PageTitle title="地块管理 (Plot Management)" subtitle="管理农场的数字化核心资产" />
+    <PageTitle title="地块管理" subtitle="管理农场的数字化核心资产" />
     <div class="content-area">
       <DataPanel title="地块列表">
         <div class="search-filter-bar">

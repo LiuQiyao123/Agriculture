@@ -23,5 +23,5 @@
 </script>
 
 <style scoped lang="scss">
-@use '@/styles/analysis-layout.scss';
+@import '@/styles/analysis-layout.scss';
 </style>

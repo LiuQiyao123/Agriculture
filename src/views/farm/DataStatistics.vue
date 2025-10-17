@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <PageTitle title="数据统计分析 (Data Statistics)" subtitle="洞察农场运营数据，驱动智能化决策" />
+    <PageTitle title="数据统计分析" subtitle="洞察农场运营数据，驱动智能化决策" />
     <div class="stats-grid">
       <div class="grid-item">
         <EchartsWrapper :options="plotAreaChartOptions" />

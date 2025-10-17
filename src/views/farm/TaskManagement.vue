@@ -1,6 +1,7 @@
+<!-- UNUSED: 未被路由引用，仅保留备份；如需启用请在 router 中映射 -->
 <template>
   <div class="page-container">
-    <PageTitle title="任务管理 (Task Management)" subtitle="统一管理所有农事任务，确保按时按质完成" />
+    <PageTitle title="任务管理" subtitle="统一管理所有农事任务，确保按时按质完成" />
     <div class="content-area">
       <DataPanel>
         <template #title>
@@ -19,10 +20,12 @@
           <el-form inline>
             <el-form-item label="状态">
               <el-select v-model="filters.status" placeholder="全部状态" clearable>
-                <el-option label="待处理" value="pending" />
-                <el-option label="进行中" value="in_progress" />
-                <el-option label="待审核" value="pending_review" />
+                <el-option label="AI建议" value="suggested" />
+                <el-option label="待下发" value="pending" />
+                <el-option label="执行中" value="assigned" />
+                <el-option label="问题反馈" value="feedback" />
                 <el-option label="已完成" value="completed" />
+                <el-option label="已归档" value="archived" />
               </el-select>
             </el-form-item>
             <el-form-item label="负责人">
@@ -74,7 +77,7 @@
             :tasks="filteredTasks"
             :loading="loading"
             @task-click="handleTaskClick"
-            @task-update="handleTaskUpdate"
+            @task-action="handleTaskAction"
           />
           
           <!-- 看板视图 -->
@@ -181,6 +184,32 @@ const handleCreateTask = () => {
 const handleTaskClick = (task) => {
   selectedTask.value = task;
   isDetailVisible.value = true;
+};
+
+const handleTaskAction = ({ action, taskId }) => {
+  console.log(`Action: ${action}, Task ID: ${taskId}`);
+  switch (action) {
+    case 'adopt':
+      // 采纳AI建议 -> 变为待下发
+      updateTask(taskId, { status: 'pending' });
+      break;
+    case 'ignore':
+      // 忽略AI建议 -> 暂时不做处理，或可增加已忽略状态
+      break;
+    case 'assign':
+      // 下发任务 -> 变为执行中
+      updateTask(taskId, { status: 'assigned' });
+      break;
+    case 'resolve':
+      // 处理反馈 -> 变为执行中
+      // 这里可以增加更复杂的逻辑，比如填写处理意见
+      updateTask(taskId, { status: 'assigned' });
+      break;
+    case 'archive':
+      // 归档任务 -> 变为已归档
+      updateTask(taskId, { status: 'archived' });
+      break;
+  }
 };
 
 const handleTaskUpdate = (taskId, updates) => {

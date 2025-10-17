@@ -33,3 +33,9 @@ $left-menu-active-text-color: $primary-accent-color;
 // 4. Typography
 $base-font-size: 14px;
 $title-font-size: 16px; 
+
+// 5. Compatibility aliases for legacy variable names
+$text-color-primary: $title-color;
+$text-color-regular: $text-color;
+$container-bg-color: $bg-color;
+$primary-color-light-1: rgba($primary-color, 0.2); 

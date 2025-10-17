@@ -80,7 +80,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-          <el-table-column prop="reporter" label="上报人" width="100" />
+          <el-table-column prop="reporter" label="上报人" width="120" />
           <el-table-column prop="phone" label="联系电话" width="130" />
           <el-table-column prop="town" label="乡镇" width="100" />
           <el-table-column prop="location" label="具体位置" min-width="150" show-overflow-tooltip />
@@ -99,7 +99,7 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="200" fixed="right">
+          <el-table-column label="操作" width="200" fixed="right" align="left">
             <template #default="scope">
               <el-button size="small" @click="handleViewReport(scope.row)">查看</el-button>
               <el-button 

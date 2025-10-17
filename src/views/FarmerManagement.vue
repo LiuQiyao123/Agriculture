@@ -28,11 +28,12 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="joinDate" label="加入日期" width="150"></el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button size="small" type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+        <el-table-column prop="joinDate" label="加入日期" sortable width="180"></el-table-column>
+        <el-table-column prop="plotCount" label="管理地块数" sortable width="150"></el-table-column>
+        <el-table-column label="操作" width="200" fixed="right" align="left">
+          <template #default="scope">
+            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

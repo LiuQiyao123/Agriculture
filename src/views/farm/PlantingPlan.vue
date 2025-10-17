@@ -138,50 +138,50 @@
         
         <div class="plans-table">
           <el-table :data="plantingPlans" style="width: 100%" class="modern-table">
-            <el-table-column prop="region" label="区域" width="100">
+            <el-table-column prop="region" label="区域" min-width="100">
               <template #default="{ row }">
                 <div class="region-cell">
                   <span class="region-name">{{ row.region }}</span>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="cropName" label="作物" width="100">
+            <el-table-column prop="cropName" label="作物" min-width="100">
               <template #default="{ row }">
                 <div class="crop-cell">
                   <span class="crop-name">{{ row.cropName }}</span>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="cropType" label="类型" width="120">
+            <el-table-column prop="cropType" label="类型">
               <template #default="{ row }">
                 <el-tag :type="getCropTypeTag(row.cropType)" class="crop-type-tag">
                   {{ row.cropType }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="plannedArea" label="面积(万亩)" width="120">
+            <el-table-column prop="plannedArea" label="面积(万亩)" align="right">
               <template #default="{ row }">
                 <div class="number-cell">{{ row.plannedArea }}</div>
               </template>
             </el-table-column>
-            <el-table-column prop="expectedYield" label="产量(万吨)" width="120">
+            <el-table-column prop="expectedYield" label="产量(万吨)" align="right">
               <template #default="{ row }">
                 <div class="number-cell">{{ row.expectedYield }}</div>
               </template>
             </el-table-column>
-            <el-table-column prop="plantingDate" label="种植时间" width="120">
+            <el-table-column prop="plantingDate" label="种植时间" min-width="120">
               <template #default="{ row }">
                 <div class="date-cell">{{ row.plantingDate }}</div>
               </template>
             </el-table-column>
-            <el-table-column prop="status" label="状态" width="100">
+            <el-table-column prop="status" label="状态" align="center">
               <template #default="{ row }">
                 <el-tag :type="getStatusTagType(row.status)" class="status-tag">
                   {{ row.status }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="150">
+            <el-table-column label="操作" width="120" fixed="right" align="left">
               <template #default="{ row }">
                 <div class="action-buttons">
                   <el-button size="small" @click="handleViewPlan(row)">查看</el-button>
@@ -466,8 +466,6 @@ const getOrderStatusTag = (status) => {
 </script>
 
 <style scoped lang="scss">
-@use '@/styles/theme.scss' as theme;
-
 .planting-plan-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #0a1929 0%, #1a2332 100%);

@@ -29,8 +29,6 @@ defineProps({
 </script>
 
 <style lang="scss" scoped>
-@use '@/styles/theme.scss' as theme;
-
 .metric-card {
   display: flex;
   align-items: center;
@@ -96,7 +94,7 @@ defineProps({
 
 .details {
   font-size: 12px;
-  color: theme.$text-color-secondary;
+  color: $text-color-secondary;
   
   :deep(span) {
     font-weight: 500;
@@ -104,7 +102,7 @@ defineProps({
 }
 
 .title {
-  color: theme.$text-color;
+  color: $text-color;
   font-size: 12px;
 }
 

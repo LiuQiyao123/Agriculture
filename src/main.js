@@ -10,8 +10,12 @@ import './style.scss'
 import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
+// V-Calendar
+import VCalendar from 'v-calendar';
+
 const app = createApp(App)
 
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
+app.use(VCalendar, {})
 app.mount('#app')

@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <PageTitle title="农事预警中心 (Alert Center)" subtitle="集中监控并响应所有紧急农事事件" />
+    <PageTitle title="农事预警中心" subtitle="集中监控并响应所有紧急农事事件" />
     <div class="content-area">
       <DataPanel>
         <template #title>

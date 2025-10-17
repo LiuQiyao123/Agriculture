@@ -9,11 +9,11 @@
       @row-mouseover="handleRowMouseover"
       @row-mouseleave="handleRowMouseleave"
     >
-      <el-table-column prop="id" label="地块ID" />
-      <el-table-column prop="properties.crop" label="当前作物" />
-      <el-table-column prop="properties.area" label="面积(亩)" />
-      <el-table-column prop="properties.owner" label="责任人" />
-      <el-table-column prop="properties.healthScore" label="健康评分">
+      <el-table-column prop="id" label="地块ID" min-width="100" />
+      <el-table-column prop="properties.crop" label="当前作物" min-width="100" />
+      <el-table-column prop="properties.area" label="面积(亩)" min-width="80" />
+      <el-table-column prop="properties.owner" label="责任人" min-width="100" />
+      <el-table-column prop="properties.healthScore" label="健康评分" min-width="150">
         <template #default="{ row }">
           <el-progress
             :percentage="row.properties.healthScore"
@@ -23,7 +23,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="100" fixed="right">
+      <el-table-column label="操作" width="80" fixed="right" align="left">
         <template #default="{ row }">
           <el-button size="small" type="primary" link @click="emit('edit-plot', row)">编辑</el-button>
         </template>

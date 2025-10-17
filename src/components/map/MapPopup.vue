@@ -23,13 +23,11 @@ defineEmits(['close']);
 </script>
 
 <style scoped lang="scss">
-@use '@/styles/theme.scss' as theme;
-
 .map-popup-container {
   width: 280px;
   background-color: rgba(21, 38, 62, 0.9);
-  border: 1px solid theme.$border-color;
-  color: theme.$text-color;
+  border: 1px solid $border-color;
+  color: $text-color;
   box-shadow: 0 0 15px rgba(0, 170, 255, 0.2);
   border-radius: 4px;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -41,11 +39,11 @@ defineEmits(['close']);
   align-items: center;
   padding: 8px 12px;
   background-color: rgba(0, 170, 255, 0.1);
-  border-bottom: 1px solid theme.$border-color;
+  border-bottom: 1px solid $border-color;
 
   .default-title {
     font-weight: bold;
-    color: theme.$title-color;
+    color: $title-color;
     font-size: 16px;
   }
 }
@@ -53,7 +51,7 @@ defineEmits(['close']);
 .close-button {
   background: none;
   border: none;
-  color: theme.$text-color;
+  color: $text-color;
   font-size: 24px;
   line-height: 1;
   cursor: pointer;
@@ -88,10 +86,10 @@ defineEmits(['close']);
     }
 
     .label {
-      color: theme.$text-color-secondary;
+      color: $text-color-secondary;
     }
     .value {
-      color: theme.$title-color;
+      color: $title-color;
       font-weight: bold;
     }
   }

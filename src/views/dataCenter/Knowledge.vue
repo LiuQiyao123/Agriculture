@@ -85,7 +85,7 @@
             <el-table-column prop="updateTime" label="更新时间" width="180" />
             <el-table-column prop="viewCount" label="浏览量" width="100" />
             <el-table-column prop="downloadCount" label="下载量" width="100" />
-            <el-table-column label="操作" width="200" fixed="right">
+            <el-table-column label="操作" width="200" fixed="right" align="left">
               <template #default="scope">
                 <el-button size="small" @click="handleViewDoc(scope.row)">查看</el-button>
                 <el-button size="small" type="primary" @click="handleEditDoc(scope.row)">编辑</el-button>

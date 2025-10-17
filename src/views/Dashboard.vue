@@ -216,6 +216,7 @@ import EchartsWrapper from '@/components/EchartsWrapper.vue'
 import GisMap from '@/components/GisMap.vue'
 import DataPanel from '@/components/DataPanel.vue'
 import LayerControl from '@/components/map/controls/LayerControl.vue'; // 引入LayerControl
+import fieldMonitorImage from '@/assets/images/农田监控.jpeg'
 import {
   alertsList,
   plotGeoJson,
@@ -333,7 +334,7 @@ const districtDiagnosis = ref({ organic: '2.6%', nitrogen: 82, moisture: 66, uni
 const districtRisk = ref({ disease: '稻瘟病 (中风险, 40%)', drought: '轻度风险 (20%)', yield: '642 公斤/亩' });
 
 // 大田图像相关
-const fieldImageSrc = ref('/static/images/field-monitor/default.jpg');
+const fieldImageSrc = ref(fieldMonitorImage);
 const fieldImageTime = ref('2024-01-15 14:30');
 
 // 健康诊断详细数据
@@ -1129,6 +1130,15 @@ em.status-good { color: #52c41a; font-style: normal; }
   border-radius: 8px;
   border: 1px solid rgba(0, 170, 255, 0.3);
   object-fit: cover;
+}
+/* 暗色遮罩，增强对比度 */
+.field-image-section::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.28);
+  border-radius: 8px;
+  pointer-events: none;
 }
 
 .image-info {

@@ -120,7 +120,7 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="120" fixed="right">
+          <el-table-column label="操作" width="120" fixed="right" align="left">
             <template #default="scope">
               <el-button size="small" @click="handleAlarmDetail(scope.row)">详情</el-button>
             </template>

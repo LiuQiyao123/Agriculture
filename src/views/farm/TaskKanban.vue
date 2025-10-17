@@ -25,6 +25,15 @@
     <div class="action-bar">
       <div class="filters">
         <el-input v-model="filters.keyword" placeholder="关键词搜索" clearable @clear="applyFilters" @keyup.enter="applyFilters" />
+        <el-select v-model="filters.status" placeholder="按状态筛选" clearable @change="applyFilters">
+          <el-option label="AI建议" value="suggested" />
+          <el-option label="待下发" value="pending" />
+          <el-option label="执行中" value="assigned" />
+          <el-option label="问题反馈" value="feedback" />
+          <el-option label="已完成" value="completed" />
+          <el-option label="已忽略" value="ignored" />
+          <el-option label="已归档" value="archived" />
+        </el-select>
         <el-select v-model="filters.plot" placeholder="按地块筛选" clearable @change="applyFilters">
           <el-option v-for="plot in plotOptions" :key="plot.value" :label="plot.label" :value="plot.value" />
         </el-select>
@@ -39,6 +48,7 @@
         <el-radio-group v-model="currentView" size="default" style="margin-left: 20px;">
           <el-radio-button label="list"><el-icon><Tickets /></el-icon> 列表</el-radio-button>
           <el-radio-button label="kanban"><el-icon><Grid /></el-icon> 看板</el-radio-button>
+          <el-radio-button label="calendar"><el-icon><Calendar /></el-icon> 日历</el-radio-button>
         </el-radio-group>
       </div>
     </div>
@@ -54,13 +64,21 @@
             @selection-change="handleSelectionChange"
             @row-mouseenter="highlightPlot"
             @row-mouseleave="clearPlotHighlight"
-            @row-click="flyToPlot"
+            @row-click="openTaskDetails"
             highlight-current-row
+            :row-class-name="tableRowClassName"
           >
-            <el-table-column type="selection" width="55" />
+            <el-table-column type="selection" width="40" />
+            <el-table-column width="50" align="center" label="来源">
+              <template #default="{ row }">
+                <el-tooltip :content="row.source === 'ai' ? 'AI建议' : '手动创建'" placement="top">
+                  <span style="font-size: 1.2rem;">{{ row.source === 'ai' ? '🤖' : '📝' }}</span>
+                </el-tooltip>
+              </template>
+            </el-table-column>
             <el-table-column prop="title" label="任务标题" min-width="250" />
             <el-table-column prop="plotName" label="关联地块" width="120" />
-            <el-table-column prop="assignee" label="负责人" width="100" />
+            <el-table-column prop="assigneeName" label="负责人" width="100" />
             <el-table-column label="优先级" width="100">
               <template #default="{ row }">
                 <el-tag :type="getPriorityTagType(row.priority)">{{ row.priority }}</el-tag>
@@ -72,10 +90,39 @@
               </template>
             </el-table-column>
             <el-table-column prop="dueDate" label="截止日期" width="120" />
-            <el-table-column label="操作" width="180" fixed="right">
+            <el-table-column label="操作" width="220" fixed="right" align="left">
               <template #default="{ row }">
-                <el-button size="small" @click="openTaskDetails(row)">编辑</el-button>
-                <el-button size="small" type="danger" @click="handleDeleteTask(row)">删除</el-button>
+                 <div class="action-buttons">
+                    <!-- AI建议 -->
+                    <template v-if="row.status === 'suggested'">
+                      <el-button size="small" type="primary" @click.stop="handleTaskAction('review', row)">审核并优化</el-button>
+                      <el-button size="small" type="info" @click.stop="handleTaskAction('ignore', row.id)">忽略</el-button>
+                    </template>
+                    <!-- 待下发 -->
+                    <template v-if="row.status === 'pending'">
+                      <el-button size="small" type="success" @click.stop="handleTaskAction('assign', row.id)">下发</el-button>
+                      <el-button size="small" @click.stop="openTaskDetails(row)">编辑</el-button>
+                      <el-button size="small" type="danger" plain @click.stop="handleTaskAction('delete', row.id)">删除</el-button>
+                    </template>
+                    <!-- 执行中 & 已归档 -->
+                    <template v-if="['assigned', 'archived'].includes(row.status)">
+                       <el-button size="small" @click.stop="openTaskDetails(row)">查看详情</el-button>
+                    </template>
+                    <!-- 问题反馈 -->
+                    <template v-if="row.status === 'feedback'">
+                      <el-button size="small" type="warning" @click.stop="openTaskDetails(row)">处理反馈</el-button>
+                    </template>
+                    <!-- 已完成 -->
+                    <template v-if="row.status === 'completed'">
+                       <el-button size="small" @click.stop="openTaskDetails(row)">查看详情</el-button>
+                      <el-button size="small" type="info" @click.stop="handleTaskAction('archive', row.id)">归档</el-button>
+                    </template>
+                     <!-- 已忽略 -->
+                    <template v-if="row.status === 'ignored'">
+                      <el-button size="small" @click.stop="handleTaskAction('recover', row.id)">恢复建议</el-button>
+                      <el-button size="small" type="danger" plain @click.stop="handleTaskAction('delete', row.id)">彻底删除</el-button>
+                    </template>
+                  </div>
               </template>
             </el-table-column>
           </el-table>
@@ -133,32 +180,38 @@
       </div>
 
       <!-- Kanban View -->
-      <div v-if="currentView === 'kanban'" class="kanban-board">
-        <div v-for="column in columns" :key="column.id" class="kanban-column">
-          <h3 class="column-title">{{ column.title }} ({{ getColumnTasks(column.id).length }})</h3>
-          <draggable
-            class="task-list"
-            :list="getColumnTasks(column.id)"
-            group="tasks"
-            item-key="id"
-            @end="onDragEnd"
-          >
-            <template #item="{ element }">
-              <div class="task-card" @click="openTaskDetails(element)">
-                <div class="task-header">
-                  <el-tag :type="getPriorityTagType(element.priority)" size="small">{{ element.priority }}</el-tag>
-                  <span class="task-plot">{{ element.plotName }}</span>
-                </div>
-                <p class="task-title">{{ element.title }}</p>
-                <div class="task-footer">
-                  <span class="task-assignee">{{ element.assignee || '未分配' }}</span>
-                  <span class="task-due-date">{{ element.dueDate }}</span>
-                </div>
+      <KanbanBoard
+        v-if="currentView === 'kanban'"
+        :columns="columns"
+        :items="filteredTasks"
+        group="tasks"
+        @item-moved="handleItemMove"
+        @item-clicked="openTaskDetails"
+      >
+        <template #card="{ item }">
+          <div class="task-card" :class="`task-card-${item.status}`">
+            <div class="task-header">
+              <div>
+                <span style="font-size: 1rem; vertical-align: middle;">{{ item.source === 'ai' ? '🤖' : '📝' }}</span>
+                <el-tag :type="getPriorityTagType(item.priority)" size="small" style="margin-left: 8px;">{{ item.priority }}</el-tag>
               </div>
-            </template>
-          </draggable>
-        </div>
-      </div>
+              <span class="task-plot">{{ item.plotName }}</span>
+            </div>
+            <p class="task-title">{{ item.title }}</p>
+            <div class="task-footer">
+              <span class="task-assignee">{{ item.assignee || '未分配' }}</span>
+              <span class="task-due-date">{{ item.dueDate }}</span>
+            </div>
+          </div>
+        </template>
+      </KanbanBoard>
+
+      <!-- Calendar View -->
+      <UniversalCalendar 
+        v-if="currentView === 'calendar'"
+        :events="calendarEvents"
+        @event-click="openTaskDetails"
+      />
     </div>
 
     <!-- Task Details Modal (reused) -->
@@ -200,15 +253,35 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, onMounted } from 'vue';
 import draggable from 'vuedraggable';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, Delete, Search, Tickets, Grid } from '@element-plus/icons-vue';
+import { Plus, Delete, Search, Tickets, Grid, Calendar } from '@element-plus/icons-vue';
 import BaseMap from '@/components/map/BaseMap.vue';
+import KanbanBoard from '@/components/common/KanbanBoard.vue';
+import UniversalCalendar from '@/components/common/UniversalCalendar.vue'; // 引入日历组件
 import shandongPlots from '@/mock/shandong-plots.json';
-import tasksData from '@/mock/tasks.json';
+// import tasksData from '@/mock/tasks.json'; // REMOVED: Use composable
+import { useTasks } from '@/composables/farm/useTasks'; // IMPORTED: Our new composable
 import usersData from '@/mock/users.json';
 import maplibregl from 'maplibre-gl';
+
+// --- Use Tasks Composable ---
+const { 
+  allTasks: tasks, 
+  loading, 
+  fetchTasks,
+  updateTask,
+  deleteTask: deleteTaskComposable,
+  createTask: createTaskComposable
+} = useTasks();
+
+onMounted(() => {
+  fetchTasks().then(() => {
+    applyFilters(); // Apply initial filters after data is loaded
+  });
+});
+
 
 // --- Helper Functions ---
 const getCentroid = (coordinates) => {
@@ -317,8 +390,6 @@ const onFeatureClicked = ({ layerId, feature, lngLat }) => {
 };
 
 // --- Data Source ---
-const tasks = ref(tasksData);
-
 const plotOptions = computed(() => 
   shandongPlots.features.map(feature => ({
     value: feature.properties.id,
@@ -330,7 +401,7 @@ const userOptions = ref(usersData);
 
 // --- Core Logic ---
 const currentView = ref('list'); // Default to list view
-const filters = ref({ keyword: '', plot: '', assignee: '' });
+const filters = ref({ keyword: '', plot: '', assignee: '', status: '' }); // Added status filter
 const filteredTasks = ref([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -338,6 +409,15 @@ const selectedTaskIds = ref([]);
 
 const applyFilters = () => {
   let tempTasks = tasks.value;
+
+  // Status Filter Logic
+  if (filters.value.status) {
+    tempTasks = tempTasks.filter(t => t.status === filters.value.status);
+  } else {
+    // By default, hide ignored and archived tasks
+    tempTasks = tempTasks.filter(t => !['ignored', 'archived'].includes(t.status));
+  }
+
   if (filters.value.keyword) {
     tempTasks = tempTasks.filter(t => t.title.toLowerCase().includes(filters.value.keyword.toLowerCase()));
   }
@@ -367,28 +447,40 @@ const handleSelectionChange = (selection) => {
 
 // --- Kanban Specific Logic ---
 const columns = ref([
-  { id: 'todo', title: '待处理' },
-  { id: 'in-progress', title: '进行中' },
-  { id: 'review', title: '待审核' },
-  { id: 'done', title: '已完成' },
+  { id: 'suggested', title: 'AI建议' },
+  { id: 'pending', title: '待下发' },
+  { id: 'assigned', title: '执行中' },
+  { id: 'feedback', title: '问题反馈' },
+  { id: 'completed', title: '已完成' },
 ]);
 
-const getColumnTasks = (status) => {
-  return filteredTasks.value.filter(task => task.status === status);
-};
-
-const onDragEnd = (event) => {
-  const { to, item } = event;
-  const newStatus = columns.value.find(c => c.title === to.parentElement.querySelector('.column-title').textContent.split(' ')[0]).id;
-  const taskId = item._underlying_vm_.id;
-  
-  const task = tasks.value.find(t => t.id === taskId);
-  if (task) {
-    task.status = newStatus;
-    ElMessage.success(`任务 "${task.title}" 已更新为 "${getStatusText(newStatus)}"`);
-    applyFilters();
+const handleItemMove = ({ itemId, newStatusId }) => {
+  const column = columns.value.find(c => c.id === newStatusId);
+  if (column) {
+    updateTask(itemId, { status: newStatusId });
+    ElMessage.success(`任务已移至 "${column.title}"`);
   }
 };
+
+// --- Calendar Specific Logic ---
+const calendarEvents = computed(() => {
+    const statusColorMap = {
+    suggested: '#409EFF',
+    pending: '#909399',
+    assigned: '#67C23A',
+    feedback: '#E6A23C',
+    completed: '#a5d6a7',
+  };
+  return filteredTasks.value.map(task => ({
+    id: task.id,
+    title: task.title,
+    startDate: task.dueDate, // Tasks have a due date, not a range
+    endDate: task.dueDate,
+    color: statusColorMap[task.status] || 'gray',
+    ...task
+  }));
+});
+
 
 // --- Modal & CRUD Logic ---
 const taskDetailsVisible = ref(false);
@@ -412,18 +504,20 @@ const saveTask = () => {
   selectedTask.value.plotName = plot ? plot.label : '';
 
   if (isNewTask.value) {
-    selectedTask.value.id = Date.now(); // Simple ID generation
-    tasks.value.unshift({ ...selectedTask.value });
-    ElMessage.success('新任务已创建！');
+    createTaskComposable({ ...selectedTask.value, status: 'pending', source: 'manual' });
+    ElMessage.success('新任务已创建，状态为"待下发"');
   } else {
-    const index = tasks.value.findIndex(t => t.id === selectedTask.value.id);
-    if (index !== -1) {
-      tasks.value[index] = { ...selectedTask.value };
+    // Check if we are saving a reviewed AI suggestion
+    if (selectedTask.value.status === 'suggested') {
+      updateTask(selectedTask.value.id, { ...selectedTask.value, status: 'pending' });
+      ElMessage.success('AI建议已审核优化，进入待下发状态');
+    } else {
+      updateTask(selectedTask.value.id, selectedTask.value);
       ElMessage.success('任务已更新！');
     }
   }
   taskDetailsVisible.value = false;
-  applyFilters();
+  // applyFilters will be triggered by reactive changes in tasks
 };
 
 const handleDeleteTask = (task) => {
@@ -432,8 +526,7 @@ const handleDeleteTask = (task) => {
     cancelButtonText: '取消',
     type: 'warning',
   }).then(() => {
-    tasks.value = tasks.value.filter(t => t.id !== task.id);
-    applyFilters();
+    deleteTaskComposable(task.id);
     ElMessage.success('任务已删除');
   }).catch(() => {});
 };
@@ -444,41 +537,110 @@ const handleBulkDelete = () => {
     cancelButtonText: '取消',
     type: 'warning',
   }).then(() => {
-    tasks.value = tasks.value.filter(t => !selectedTaskIds.value.includes(t.id));
-    applyFilters();
+    selectedTaskIds.value.forEach(id => deleteTaskComposable(id));
     ElMessage.success('批量删除成功');
   }).catch(() => {});
 };
 
+// --- Action Handler for List View ---
+const handleTaskAction = (action, payload) => {
+  const taskId = typeof payload === 'object' ? payload.id : payload;
+  
+  switch (action) {
+    case 'review':
+      openTaskDetails(payload); // payload is the full task object
+      break;
+    case 'ignore':
+      updateTask(taskId, { status: 'ignored' });
+      ElMessage.info('AI建议已忽略');
+      break;
+    case 'delete':
+      ElMessageBox.confirm('确定要删除此任务吗？此操作不可恢复。', '警告', {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }).then(() => {
+        deleteTaskComposable(taskId);
+        ElMessage.success('任务已删除');
+      }).catch(() => {});
+      break;
+    case 'assign':
+      updateTask(taskId, { status: 'assigned' });
+      ElMessage.success('任务已下发');
+      break;
+    case 'resolve':
+       // In real app, this would open a dialog. Here we just open details.
+      openTaskDetails(payload);
+      break;
+    case 'archive':
+      updateTask(taskId, { status: 'archived' });
+      ElMessage.success('任务已归档');
+      break;
+    case 'recover':
+      updateTask(taskId, { status: 'suggested' });
+      ElMessage.success('AI建议已恢复');
+      break;
+  }
+};
+
+
 // --- KPI & Helper Functions ---
 const kpi = computed(() => {
   const today = new Date().toISOString().split('T')[0];
+  const activeTasks = tasks.value.filter(t => !['ignored', 'archived', 'completed'].includes(t.status));
+
   return {
-    todo: tasks.value.filter(t => t.status === 'todo').length,
-    inProgress: tasks.value.filter(t => t.status === 'in-progress').length,
-    dueToday: tasks.value.filter(t => t.dueDate === today && t.status !== 'done').length,
-    overdue: tasks.value.filter(t => t.dueDate < today && t.status !== 'done').length,
+    todo: tasks.value.filter(t => ['suggested', 'pending'].includes(t.status)).length,
+    inProgress: tasks.value.filter(t => ['assigned', 'feedback'].includes(t.status)).length,
+    dueToday: activeTasks.filter(t => t.dueDate === today).length,
+    overdue: activeTasks.filter(t => t.dueDate < today).length,
   };
 });
 
 const getPriorityTagType = (priority) => {
-  if (priority === '高') return 'danger';
-  if (priority === '中') return 'warning';
+  if (priority === '高' || priority === 'high') return 'danger';
+  if (priority === '中' || priority === 'medium') return 'warning';
   return 'info';
 };
 
 const getStatusText = (status) => {
-  const map = { todo: '待处理', 'in-progress': '进行中', review: '待审核', done: '已完成' };
+  const map = { 
+    suggested: 'AI建议',
+    pending: '待下发',
+    assigned: '执行中',
+    feedback: '问题反馈',
+    completed: '已完成',
+    ignored: '已忽略',
+    archived: '已归档',
+    // Legacy statuses for compatibility if needed
+    todo: '待处理', 
+    'in-progress': '进行中', 
+    review: '待审核', 
+    done: '已完成' 
+  };
   return map[status] || '未知';
 };
 
 const getStatusTagType = (status) => {
-  const map = { todo: 'info', 'in-progress': 'primary', review: 'warning', done: 'success' };
+  const map = { 
+    suggested: 'primary',
+    pending: 'info',
+    assigned: 'success',
+    feedback: 'warning',
+    completed: 'success',
+    ignored: 'default',
+    archived: 'info',
+     // Legacy statuses
+    todo: 'info', 
+    'in-progress': 'primary', 
+    review: 'warning', 
+    done: 'success' 
+  };
   return map[status] || '';
 };
 
-// Initial data load
-applyFilters();
+// Initial data load - handled by onMounted
+// applyFilters();
 </script>
 
 <style scoped>
@@ -517,11 +679,13 @@ applyFilters();
   justify-content: space-between;
   margin-bottom: 20px;
   flex-shrink: 0;
+  align-items: center; /* Vertically align items */
 }
 
 .filters {
   display: flex;
   gap: 10px;
+  align-items: center; /* Vertically align filter items */
 }
 
 .content-view {
@@ -551,44 +715,25 @@ applyFilters();
   border: 1px solid #e0e0e0;
 }
 
-/* Kanban View Styles */
-.kanban-board {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  height: 100%;
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    /* justify-content: center; REMOVED */
 }
-.kanban-column {
-  background-color: #f4f5f7;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.column-title {
-  padding: 15px;
-  font-size: 16px;
-  font-weight: 600;
-  border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0;
-}
-.task-list {
-  padding: 10px;
-  flex-grow: 1;
-  overflow-y: auto;
-}
+
+/* Kanban View Styles (大部分已移至KanbanBoard.vue) */
 .task-card {
-  background-color: #fff;
-  border-radius: 4px;
-  padding: 15px;
+  background: $panel-bg-color;
+  border-radius: 6px;
+  padding: 14px;
   margin-bottom: 10px;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  border-left: 4px solid #409EFF;
-  transition: box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  border-left: 4px solid $primary-accent-color;
+  transition: box-shadow 0.2s, background 0.2s;
 }
 .task-card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
 }
 .task-header {
   display: flex;
@@ -596,14 +741,43 @@ applyFilters();
   align-items: center;
   margin-bottom: 10px;
 }
-.task-plot { font-size: 12px; color: #909399; }
-.task-title { font-size: 14px; margin: 0 0 15px 0; line-height: 1.4; }
+.task-plot { font-size: 12px; color: $text-color-secondary; }
+.task-title { font-size: 14px; margin: 0 0 15px 0; line-height: 1.4; color: $title-color; }
 .task-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #909399;
+  color: $text-color;
+}
+/* 状态色：左侧边框 + 低不透明度背景罩层 */
+.task-card-suggested {
+  border-left-color: $primary-accent-color;
+  background: linear-gradient(0deg, rgba($primary-accent-color, 0.08), rgba($primary-accent-color, 0.08)), $panel-bg-color;
+}
+.task-card-pending {
+  border-left-color: $border-color;
+  background: linear-gradient(0deg, rgba(255,255,255,0.04), rgba(255,255,255,0.04)), $panel-bg-color;
+}
+.task-card-assigned {
+  border-left-color: $secondary-accent-color;
+  background: linear-gradient(0deg, rgba($secondary-accent-color, 0.08), rgba($secondary-accent-color, 0.08)), $panel-bg-color;
+}
+.task-card-feedback {
+  border-left-color: #E6A23C; /* warning */
+  background: linear-gradient(0deg, rgba(230,162,60,0.10), rgba(230,162,60,0.10)), $panel-bg-color;
+}
+.task-card-completed {
+  border-left-color: #a5d6a7; /* soft green */
+  background: linear-gradient(0deg, rgba(165,214,167,0.06), rgba(165,214,167,0.06)), $panel-bg-color;
+}
+.task-card-ignored {
+  border-left-color: rgba(255,255,255,0.12);
+  background: linear-gradient(0deg, rgba(255,255,255,0.02), rgba(255,255,255,0.02)), $panel-bg-color;
+}
+.task-card-archived {
+  border-left-color: rgba(255,255,255,0.15);
+  background: linear-gradient(0deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03)), $panel-bg-color;
 }
 </style>
 

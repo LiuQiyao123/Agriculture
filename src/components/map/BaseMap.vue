@@ -49,7 +49,7 @@ const initializeMap = () => {
     container: mapContainer.value,
     style: style,
     center: [118.5, 36.5],
-    zoom: 7.2,
+    zoom: 12, // 放大默认缩放，便于看清线路
     pitch: 0,
     bearing: 0,
     antialias: true,
@@ -125,6 +125,29 @@ const updateLayers = (newLayers, prevLayers = {}) => {
       map.value.on('mouseleave', layerId, () => map.value.getCanvas().style.cursor = '');
     }
   });
+
+  // 自动缩放：若有线要素（如调度线路），则按其包络框适配视图
+  try {
+    const allFeatures = [];
+    Object.values(newLayers).forEach(cfg => {
+      if (cfg && cfg.data && Array.isArray(cfg.data.features)) allFeatures.push(...cfg.data.features);
+    });
+    const coords = [];
+    allFeatures.forEach(f => {
+      const g = f.geometry;
+      if (!g) return;
+      if (g.type === 'LineString') coords.push(...g.coordinates);
+      else if (g.type === 'Point') coords.push(g.coordinates);
+      else if (g.type === 'MultiLineString') g.coordinates.forEach(ls=>coords.push(...ls));
+    });
+    if (coords.length >= 2) {
+      let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+      coords.forEach(([x,y])=>{ if(x<minX)minX=x; if(y<minY)minY=y; if(x>maxX)maxX=x; if(y>maxY)maxY=y; });
+      if (isFinite(minX) && isFinite(minY) && isFinite(maxX) && isFinite(maxY) && (maxX-minX>0 || maxY-minY>0)) {
+        map.value.fitBounds([[minX,minY],[maxX,maxY]], { padding: 60, duration: 600 });
+      }
+    }
+  } catch {}
 };
 
 const initializeDraw = () => {

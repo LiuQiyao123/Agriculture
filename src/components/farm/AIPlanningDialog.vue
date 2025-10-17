@@ -643,8 +643,6 @@ const handleClose = () => {
 </script>
 
 <style scoped lang="scss">
-@use '@/styles/theme.scss' as theme;
-
 .ai-planning-dialog {
   .el-dialog__body {
     padding: 20px;

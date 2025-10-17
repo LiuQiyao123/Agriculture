@@ -6,7 +6,7 @@
       style="width: 100%"
       @row-click="handleRowClick"
     >
-      <el-table-column prop="name" label="计划名称" min-width="200">
+      <el-table-column prop="name" label="计划名称" min-width="180">
         <template #default="{ row }">
           <div class="plan-name">
             <span class="name">{{ row.name }}</span>
@@ -21,19 +21,19 @@
         </template>
       </el-table-column>
       
-      <el-table-column prop="crop" label="作物类型" width="120">
+      <el-table-column prop="crop" label="作物类型">
         <template #default="{ row }">
           <el-tag type="success" size="small">{{ row.crop }}</el-tag>
         </template>
       </el-table-column>
       
-      <el-table-column prop="plotCount" label="关联地块" width="100" align="center">
+      <el-table-column prop="plotCount" label="关联地块" align="center">
         <template #default="{ row }">
           <span class="plot-count">{{ row.plotCount }}个</span>
         </template>
       </el-table-column>
       
-      <el-table-column prop="timeRange" label="时间周期" width="180">
+      <el-table-column prop="timeRange" label="时间周期" min-width="160">
         <template #default="{ row }">
           <div class="time-range">
             <div class="start-date">{{ formatDate(row.startDate) }}</div>
@@ -42,7 +42,7 @@
         </template>
       </el-table-column>
       
-      <el-table-column prop="profit" label="预估利润" width="120" align="right">
+      <el-table-column prop="profit" label="预估利润" min-width="120" align="right">
         <template #default="{ row }">
           <div class="profit">
             <span class="amount">¥{{ formatNumber(row.profit) }}</span>
@@ -51,7 +51,7 @@
         </template>
       </el-table-column>
       
-      <el-table-column prop="riskLevel" label="风险等级" width="100" align="center">
+      <el-table-column prop="riskLevel" label="风险等级" align="center">
         <template #default="{ row }">
           <el-tag 
             :type="getRiskType(row.riskLevel)" 
@@ -62,9 +62,9 @@
         </template>
       </el-table-column>
       
-      <el-table-column prop="createdBy" label="创建人" width="100" />
+      <el-table-column prop="createdBy" label="创建人" />
       
-      <el-table-column label="操作" width="180" fixed="right">
+      <el-table-column label="操作" width="120" fixed="right" align="left">
         <template #default="{ row }">
           <el-button 
             type="primary" 

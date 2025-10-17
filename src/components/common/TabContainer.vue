@@ -98,8 +98,6 @@ const handleTabChange = (tabValue) => {
 </script>
 
 <style scoped lang="scss">
-@use '@/styles/theme.scss' as theme;
-
 .tab-container {
   display: flex;
   flex-direction: column;
@@ -107,8 +105,8 @@ const handleTabChange = (tabValue) => {
 }
 
 .tab-navigation {
-  background: theme.$left-menu-bg;
-  border-bottom: 1px solid theme.$border-color;
+  background: $left-menu-bg;
+  border-bottom: 1px solid $border-color;
   padding: 0 20px;
   
   .tab-tabs {
@@ -138,7 +136,7 @@ const handleTabChange = (tabValue) => {
       height: 50px;
       line-height: 50px;
       font-weight: 500;
-      color: theme.$left-menu-text-color;
+      color: $left-menu-text-color;
       background: transparent;
       border-bottom: none;
       transition: all 0.2s ease;
@@ -149,8 +147,8 @@ const handleTabChange = (tabValue) => {
       position: relative;
       
       &.is-active {
-        color: theme.$left-menu-active-text-color;
-        background: theme.$left-menu-active-bg;
+        color: $left-menu-active-text-color;
+        background: $left-menu-active-bg;
         
         &::after {
           content: '';
@@ -159,13 +157,13 @@ const handleTabChange = (tabValue) => {
           left: 0;
           right: 0;
           height: 3px;
-          background: theme.$primary-color;
+          background: $primary-color;
         }
       }
       
       &:hover {
         color: #fff;
-        background: theme.$left-menu-active-bg;
+        background: $left-menu-active-bg;
       }
     }
     

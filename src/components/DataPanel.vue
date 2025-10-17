@@ -22,11 +22,9 @@ defineProps({
 </script>
 
 <style scoped lang="scss">
-@use '@/styles/theme.scss' as theme;
-
 .data-panel {
-  background-color: theme.$panel-bg-color;
-  border: 1px solid theme.$border-color;
+  background-color: $panel-bg-color;
+  border: 1px solid $border-color;
   border-radius: 8px;
   box-shadow: 0 0 12px rgba(0, 170, 255, 0.3);
   display: flex;
@@ -41,7 +39,7 @@ defineProps({
   align-items: center;
   padding: 0 20px;
   height: 48px;
-  border-bottom: 1px solid theme.$border-color;
+  border-bottom: 1px solid $border-color;
   flex-shrink: 0;
   position: relative;
 
@@ -62,7 +60,7 @@ defineProps({
 }
 
 .panel-title {
-  color: theme.$title-color;
+  color: $title-color;
   font-size: 16px;
   font-weight: 600;
   margin: 0;
@@ -78,7 +76,7 @@ defineProps({
     transform: translateY(-50%);
     width: 4px;
     height: 16px;
-    background-color: theme.$primary-accent-color;
+    background-color: $primary-accent-color;
     border-radius: 2px;
   }
 }
@@ -98,7 +96,7 @@ defineProps({
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: theme.$panel-bg-color;
+  background-color: $panel-bg-color;
   z-index: 1;
 }
 </style> 

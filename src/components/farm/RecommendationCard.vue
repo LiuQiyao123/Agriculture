@@ -1,3 +1,4 @@
+<!-- UNUSED: 仅被未启用的 PlanWizardDialog.vue 引用 -->
 <template>
   <div 
     class="recommendation-card" 
